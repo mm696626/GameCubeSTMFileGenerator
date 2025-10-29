@@ -1,5 +1,7 @@
 package ui;
 
+import io.STMGenerator;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
@@ -154,7 +156,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             }
 
 
-            //put STM generation code here
+            STMGenerator.generateSTM(leftChannelFile, rightChannelFile);
         }
     }
 }
