@@ -2,6 +2,7 @@ package ui;
 
 import constants.STMFileNames;
 import io.STMGenerator;
+import io.STMHeaderLoopChecker;
 import uihelpers.DSPPair;
 import uihelpers.GenerateJob;
 
@@ -12,9 +13,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Scanner;
+import java.util.*;
+import java.util.List;
 
 public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener {
 
@@ -38,6 +38,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private DefaultListModel<GenerateJob> jobQueueModel;
     private JList<GenerateJob> jobQueueList;
     private JButton addToQueueButton, removeQueueButton, clearQueueButton, runBatchButton;
+    private JButton modifyWithRandomSongs;
 
     private JCheckBox autoAddToQueue;
 
@@ -101,6 +102,9 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         fixNonLoopingSTMHeaderFolder = new JButton("Fix Nonlooping STM Headers (Folder)");
         fixNonLoopingSTMHeaderFolder.addActionListener(this);
 
+        modifyWithRandomSongs = new JButton("Modify Songs with Random Songs");
+        modifyWithRandomSongs.addActionListener(this);
+
         stmGBC.gridx = 0; stmGBC.gridy = 0;
         stmPanel.add(pickLeftChannel, stmGBC);
         stmGBC.gridx = 1;
@@ -117,6 +121,8 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         stmPanel.add(fixNonLoopingSTMHeader, stmGBC);
         stmGBC.gridx = 2;
         stmPanel.add(fixNonLoopingSTMHeaderFolder, stmGBC);
+        stmGBC.gridx = 3;
+        stmPanel.add(modifyWithRandomSongs, stmGBC);
 
         autoAddToQueue = new JCheckBox("Automatically Add DSP Pairs from DSP Folder to Queue");
         stmGBC.gridx = 0; stmGBC.gridy = 3;
@@ -769,6 +775,190 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             }
 
             JOptionPane.showMessageDialog(null, "STM headers fixed successfully!");
+        }
+
+        if (e.getSource() == modifyWithRandomSongs) {
+
+            File dspFolderForRandomization;
+
+            if (savedDSPFolder == null || !savedDSPFolder.exists()) {
+                JFileChooser dspFolderChooser = new JFileChooser();
+                dspFolderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                dspFolderChooser.setDialogTitle("Select DSP Folder for Randomization");
+                dspFolderChooser.setAcceptAllFileFilterUsed(false);
+                int result = dspFolderChooser.showOpenDialog(this);
+
+                if (result != JFileChooser.APPROVE_OPTION) {
+                    return;
+                }
+
+                dspFolderForRandomization = dspFolderChooser.getSelectedFile();
+            }
+            else {
+                dspFolderForRandomization = savedDSPFolder;
+            }
+
+            ArrayList<DSPPair> dspPairs = new ArrayList<>();
+
+            if (dspFolderForRandomization != null) {
+                dspPairs = DSPPair.detectDSPPairs(dspFolderForRandomization);
+            }
+
+            for (int i = dspPairs.size() - 1; i >= 0; i--) {
+                DSPPair pair = dspPairs.get(i);
+                if (!STMHeaderLoopChecker.isValidLoopStart(pair.getLeft()) || !STMHeaderLoopChecker.isValidLoopStart(pair.getRight())) {
+                    dspPairs.remove(i);
+                }
+            }
+
+            if (dspPairs.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No DSP pairs exist in the DSP folder!");
+                return;
+            }
+
+            String selectedGame = (String) gameSelector.getSelectedItem();
+            if (selectedGame == null || selectedGame.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please select a game before randomizing.");
+                return;
+            }
+
+            selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
+
+            String[] songFileNames = getSongArrayForSelectedGame();
+
+            if (songFileNames == null) {
+                return;
+            }
+
+            JPanel mainPanel = new JPanel(new BorderLayout());
+            JPanel topPanel = new JPanel(new BorderLayout());
+
+
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            JButton selectAllButton = new JButton("Select All");
+            JButton selectNoneButton = new JButton("Select None");
+            buttonPanel.add(selectAllButton);
+            buttonPanel.add(selectNoneButton);
+            topPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+            JPanel checkboxPanel = new JPanel();
+            checkboxPanel.setLayout(new BoxLayout(checkboxPanel, BoxLayout.Y_AXIS));
+
+            JCheckBox[] songCheckboxes = new JCheckBox[songFileNames.length];
+
+            for (int i=0; i<songFileNames.length; i++) {
+                songCheckboxes[i] = new JCheckBox(songFileNames[i]);
+                checkboxPanel.add(songCheckboxes[i]);
+            }
+
+            JScrollPane scrollPane = new JScrollPane(checkboxPanel);
+            scrollPane.setPreferredSize(new Dimension(400, 400));
+
+            mainPanel.add(topPanel, BorderLayout.NORTH);
+            mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+            selectAllButton.addActionListener(ev -> {
+                for (JCheckBox cb : songCheckboxes) {
+                    cb.setSelected(true);
+                }
+            });
+
+            selectNoneButton.addActionListener(ev -> {
+                for (JCheckBox cb : songCheckboxes) {
+                    cb.setSelected(false);
+                }
+            });
+
+            int confirm = JOptionPane.showConfirmDialog(
+                    null,
+                    mainPanel,
+                    "Select Songs to Randomize",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (confirm != JOptionPane.OK_OPTION) {
+                return;
+            }
+
+            boolean atLeastOneSelected = false;
+            for (JCheckBox cb : songCheckboxes) {
+                if (cb.isSelected()) {
+                    atLeastOneSelected = true;
+                    break;
+                }
+            }
+            if (!atLeastOneSelected) {
+                JOptionPane.showMessageDialog(this, "You must select at least one song");
+                return;
+            }
+
+            int minimizeRepeatsResponse = JOptionPane.showConfirmDialog(
+                    null,
+                    "Do you want to minimize repeat replacement songs?",
+                    "Minimize Repeats",
+                    JOptionPane.YES_NO_OPTION
+            );
+
+            boolean minimizeRepeats;
+            minimizeRepeats = minimizeRepeatsResponse == JOptionPane.YES_OPTION;
+
+            Random rng = new Random();
+            List<DSPPair> dspPairPool = new ArrayList<>(dspPairs);
+
+            File outputDir;
+
+            if (savedOutputFolder != null && savedOutputFolder.exists()) {
+                outputDir = savedOutputFolder;
+            }
+            else {
+                JFileChooser folderChooser = new JFileChooser();
+                folderChooser.setDialogTitle("Select Output Folder");
+                folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                folderChooser.setAcceptAllFileFilterUsed(false);
+
+                int userSelection = folderChooser.showOpenDialog(this);
+                if (userSelection != JFileChooser.APPROVE_OPTION) {
+                    return;
+                }
+
+                outputDir = folderChooser.getSelectedFile();
+            }
+
+            int songFileNameIndex = 0;
+            for (String songFileName : songFileNames) {
+
+                JCheckBox songRandomized = songCheckboxes[songFileNameIndex];
+                songFileNameIndex++;
+
+                if (songRandomized == null || !songRandomized.isSelected()) {
+                    continue;
+                }
+
+                if (dspPairPool.isEmpty()) {
+                    dspPairPool.addAll(dspPairs);
+                }
+
+                int randomIndex = rng.nextInt(dspPairPool.size());
+
+                DSPPair chosenSongPair;
+                if (minimizeRepeats) {
+                    chosenSongPair = dspPairPool.remove(randomIndex);
+                }
+                else {
+                    chosenSongPair = dspPairPool.get(randomIndex);
+                }
+
+                File outputSTMFile = new File(outputDir, songFileName);
+
+                if (outputSTMFile.exists()) {
+                    outputSTMFile.delete();
+                }
+
+                STMGenerator.generateSTM(chosenSongPair.getLeft(), chosenSongPair.getRight(), outputSTMFile, songFileName, selectedGame);
+            }
+
+            JOptionPane.showMessageDialog(this, "Randomization completed.");
         }
 
         if (e.getSource() == addToQueueButton) {

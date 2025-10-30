@@ -12,7 +12,7 @@ public class STMGenerator {
 
     public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile, String songFileName, String selectedGame) {
 
-        if (!isValidLoopStart(leftChannel) || !isValidLoopStart(rightChannel)) {
+        if (!STMHeaderLoopChecker.isValidLoopStart(leftChannel) || !STMHeaderLoopChecker.isValidLoopStart(rightChannel)) {
             JOptionPane.showMessageDialog(null, "One or both of your channels for " + songFileName + " has an invalid loop start for the STM format!");
             return false;
         }
@@ -184,30 +184,6 @@ public class STMGenerator {
         }
     }
 
-
-    private static boolean isValidLoopStart(File dspChannel) {
-        byte[] loopStartBytes = new byte[DSPFileConstants.LOOP_START_LENGTH_IN_BYTES];
-        try (RandomAccessFile dspRaf = new RandomAccessFile(dspChannel, "r")) {
-            dspRaf.seek(DSPFileConstants.LOOP_START_OFFSET);
-            dspRaf.read(loopStartBytes);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        byte[] validLoopStartBytes = {
-                (byte) 0x02, (byte) 0x42, (byte) 0x82, (byte) 0xC2
-        };
-
-        byte loopStartByte = loopStartBytes[DSPFileConstants.LOOP_START_LENGTH_IN_BYTES - 1];
-
-        for (byte validLoopStartByte : validLoopStartBytes) {
-            if (loopStartByte == validLoopStartByte) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     private static void logSongReplacement(String songFileName, File leftChannel, File rightChannel, String selectedGame) {
         File songReplacementsFolder = new File("song_replacements");
