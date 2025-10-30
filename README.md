@@ -13,8 +13,10 @@
   * If you don't, it will mess up the loop point to the point the game would crash if the STM is loaded
 * For nonlooping jingles and such, Put your sound into an MP3 or WAV and use LoopingAudioConverter to make it a start to end looping DSP
   * Be sure to press the Fix Nonlooping STM Header button before using your STM in game
-  * If you don't do with this hacky workaround with a regular audio, the game will also crash
+  * If you don't do this hacky workaround with nonlooping audio, the game will also crash
     * I have no idea why this happens
+* To ensure your STM will work in game, open it with vgmstream and see if it loads
+  * https://katiefrogs.github.io/vgmstream-web/
 
 ### Special Thanks/Credits
 * This documentation on the STM header and DSP format helped a lot too
