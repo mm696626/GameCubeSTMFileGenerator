@@ -8,11 +8,11 @@ import java.io.RandomAccessFile;
 
 public class STMGenerator {
 
-    public static void generateSTM(File leftChannel, File rightChannel, File outputSTMFile) {
+    public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile) {
 
         if (!isValidLoopStart(leftChannel) || !isValidLoopStart(rightChannel)) {
             JOptionPane.showMessageDialog(null, "One or both of your channels has an invalid loop start for the STM format!");
-            return;
+            return false;
         }
 
         try (RandomAccessFile stmRaf = new RandomAccessFile(outputSTMFile, "rw")) {
@@ -140,12 +140,12 @@ public class STMGenerator {
                 stmRaf.write(0);
             }
 
-            JOptionPane.showMessageDialog(null, "STM file generated successfully!");
-
+            return true;
         }
         catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
+            return false;
         }
     }
 
