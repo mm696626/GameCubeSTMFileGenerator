@@ -23,128 +23,31 @@ public class STMGenerator {
 
         try (RandomAccessFile stmRaf = new RandomAccessFile(outputSTMFile, "rw")) {
 
-            //version number (always 2)
-            stmRaf.write(0x02);
-            stmRaf.write(0x00);
+            //use left channel here (since it's two halves of identically sized audio)
+            int audioChannelLength = (int)leftChannel.length() - DSPFileConstants.DSP_HEADER_LENGTH_IN_BYTES;
+            int audioChannelWithPaddingLength = getAudioChannelWithPaddingLength(audioChannelLength);
 
-            //grab sample rate from DSP
-            byte[] stmSampleRate = new byte[2];
-            try (RandomAccessFile leftChannelRaf = new RandomAccessFile(leftChannel, "r")) {
-                leftChannelRaf.seek(DSPFileConstants.SAMPLE_RATE_OFFSET + 2); //only need lower 2 bytes
-                leftChannelRaf.read(stmSampleRate);
-            }
+            writeSTMHeader(leftChannel, stmRaf, audioChannelWithPaddingLength);
 
-            //write sample rate
-            stmRaf.write(stmSampleRate);
-
-            //will always be stereo, so write 2
-            stmRaf.writeInt(2);
-
-            int leftChannelAudioLength = (int)leftChannel.length() - 0x60;
-            int leftChannelBlockLength;
-
-            if (leftChannelAudioLength % 0x20 != 0) {
-                leftChannelBlockLength = leftChannelAudioLength + (0x20 - (leftChannelAudioLength % 0x20));
-            }
-            else {
-                leftChannelBlockLength = leftChannelAudioLength;
-            }
-
-            //grab loop start from DSP
-            byte[] newLoopStart = new byte[DSPFileConstants.LOOP_START_LENGTH_IN_BYTES];
-            try (RandomAccessFile leftChannelRaf = new RandomAccessFile(leftChannel, "r")) {
-                leftChannelRaf.seek(DSPFileConstants.LOOP_START_OFFSET);
-                leftChannelRaf.read(newLoopStart);
-            }
-
-            long loopStartDSP = ((newLoopStart[0] & 0xFF) << 24) |
-                    ((newLoopStart[1] & 0xFF) << 16) |
-                    ((newLoopStart[2] & 0xFF) << 8)  |
-                    (newLoopStart[3] & 0xFF);
-
-            long loopStartSTM = (loopStartDSP-2)/2;
-
-            stmRaf.writeInt((int)leftChannelBlockLength);
-            stmRaf.writeInt((int)loopStartSTM);
-
-            stmRaf.writeInt((int)leftChannelBlockLength);
-            stmRaf.writeInt((int)leftChannelBlockLength);
-
-            stmRaf.writeInt((int)loopStartSTM);
-            stmRaf.writeInt((int)loopStartSTM);
-
-            //write last 0x20 bytes of padding for STM header
-            for (int i=0; i<0x20; i++) {
-                stmRaf.write(0x00);
-            }
-
-            //read and write DSP channel headers
-            byte[] leftChannelHeader = new byte[0x60];
-            try (RandomAccessFile leftChannelRaf = new RandomAccessFile(leftChannel, "r")) {
-                leftChannelRaf.seek(0x0);
-                leftChannelRaf.read(leftChannelHeader);
-            }
-
-            byte[] rightChannelHeader = new byte[0x60];
-            try (RandomAccessFile leftChannelRaf = new RandomAccessFile(rightChannel, "r")) {
-                leftChannelRaf.seek(0x0);
-                leftChannelRaf.read(rightChannelHeader);
-            }
-
-            stmRaf.write(leftChannelHeader);
-            stmRaf.write(rightChannelHeader);
+            writeDSPHeaders(leftChannel, rightChannel, stmRaf);
 
             //read and write left channel audio data
-            byte[] newDSPLeftChannelAudio;
+            writeAudioChannel(leftChannel, stmRaf);
 
-            try (RandomAccessFile leftChannelRaf = new RandomAccessFile(leftChannel, "r")) {
-                leftChannelRaf.seek(0x60);
-                long remainingBytes = leftChannelRaf.length() - 0x60;
-                newDSPLeftChannelAudio = new byte[(int) remainingBytes];
-                leftChannelRaf.readFully(newDSPLeftChannelAudio);
-            }
-
-            stmRaf.write(newDSPLeftChannelAudio);
-
-            //pad left channel audio to 0x20 boundary
-            if (leftChannelAudioLength % 0x20 != 0) {
-                long bytesToWrite = 0x20 - (leftChannelAudioLength % 0x20);
-
-                for (int i=0; i<bytesToWrite; i++) {
-                    stmRaf.write(0);
-                }
-            }
+            //align left channel audio to 0x20 boundary
+            alignAudioData(audioChannelLength, stmRaf);
 
             //write 0x20 bytes of padding between channels
-            for (int i=0; i<0x20; i++) {
-                stmRaf.write(0);
-            }
+            writePaddingBytes(stmRaf, 0x20);
 
             //read and write right channel audio data
-            byte[] newDSPRightChannelAudio;
+            writeAudioChannel(rightChannel, stmRaf);
 
-            try (RandomAccessFile rightChannelRaf = new RandomAccessFile(rightChannel, "r")) {
-                rightChannelRaf.seek(0x60);
-                long remainingBytes = rightChannelRaf.length() - 0x60;
-                newDSPRightChannelAudio = new byte[(int) remainingBytes];
-                rightChannelRaf.readFully(newDSPRightChannelAudio);
-            }
-
-            stmRaf.write(newDSPRightChannelAudio);
-
-            //pad right channel audio to 0x20 boundary
-            if (leftChannelAudioLength % 0x20 != 0) {
-                long bytesToWrite = 0x20 - (leftChannelAudioLength % 0x20);
-
-                for (int i=0; i<bytesToWrite; i++) {
-                    stmRaf.write(0);
-                }
-            }
+            //align right channel audio to 0x20 boundary
+            alignAudioData(audioChannelLength, stmRaf);
 
             //write last 0x8000 bytes of padding all STM files have
-            for (int i=0; i<0x8000; i++) {
-                stmRaf.write(0);
-            }
+            writePaddingBytes(stmRaf, 0x8000);
 
             logSongReplacement(songFileName, leftChannel, rightChannel, selectedGame);
             return true;
@@ -153,6 +56,107 @@ public class STMGenerator {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
             return false;
+        }
+    }
+
+    private static void writeAudioChannel(File audioChannel, RandomAccessFile stmRaf) throws IOException {
+        byte[] audioChannelData;
+
+        try (RandomAccessFile audioChannelRaf = new RandomAccessFile(audioChannel, "r")) {
+            audioChannelRaf.seek(DSPFileConstants.AUDIO_DATA_OFFSET);
+            long remainingBytes = audioChannelRaf.length() - DSPFileConstants.AUDIO_DATA_OFFSET;
+            audioChannelData = new byte[(int) remainingBytes];
+            audioChannelRaf.readFully(audioChannelData);
+        }
+
+        stmRaf.write(audioChannelData);
+    }
+
+    private static void writeDSPHeaders(File leftChannel, File rightChannel, RandomAccessFile stmRaf) throws IOException {
+        //read and write DSP channel headers
+        byte[] leftChannelHeader = new byte[DSPFileConstants.DSP_HEADER_LENGTH_IN_BYTES];
+        try (RandomAccessFile leftChannelRaf = new RandomAccessFile(leftChannel, "r")) {
+            leftChannelRaf.seek(0x00);
+            leftChannelRaf.read(leftChannelHeader);
+        }
+
+        byte[] rightChannelHeader = new byte[DSPFileConstants.DSP_HEADER_LENGTH_IN_BYTES];
+        try (RandomAccessFile rightChannelRaf = new RandomAccessFile(rightChannel, "r")) {
+            rightChannelRaf.seek(0x00);
+            rightChannelRaf.read(rightChannelHeader);
+        }
+
+        stmRaf.write(leftChannelHeader);
+        stmRaf.write(rightChannelHeader);
+    }
+
+    private static int getAudioChannelWithPaddingLength(int audioChannelLength) {
+        int audioChannelWithPaddingLength;
+
+        if (audioChannelLength % 0x20 != 0) {
+            audioChannelWithPaddingLength = audioChannelLength + (0x20 - (audioChannelLength % 0x20));
+        }
+        else {
+            audioChannelWithPaddingLength = audioChannelLength;
+        }
+        return audioChannelWithPaddingLength;
+    }
+
+    private static void writeSTMHeader(File leftChannel, RandomAccessFile stmRaf, int audioChannelWithPaddingLength) throws IOException {
+        //version number (always 2)
+        stmRaf.write(0x02);
+        stmRaf.write(0x00);
+
+        //grab sample rate from DSP
+        byte[] stmSampleRate = new byte[2];
+        try (RandomAccessFile leftChannelRaf = new RandomAccessFile(leftChannel, "r")) {
+            leftChannelRaf.seek(DSPFileConstants.SAMPLE_RATE_OFFSET + 2); //only need lower 2 bytes
+            leftChannelRaf.read(stmSampleRate);
+        }
+
+        //write sample rate
+        stmRaf.write(stmSampleRate);
+
+        //will always be stereo, so write 2
+        stmRaf.writeInt(2);
+
+        //grab loop start from DSP
+        byte[] newLoopStart = new byte[DSPFileConstants.LOOP_START_LENGTH_IN_BYTES];
+        try (RandomAccessFile leftChannelRaf = new RandomAccessFile(leftChannel, "r")) {
+            leftChannelRaf.seek(DSPFileConstants.LOOP_START_OFFSET);
+            leftChannelRaf.read(newLoopStart);
+        }
+
+        long loopStartDSP = ((newLoopStart[0] & 0xFF) << 24) |
+                ((newLoopStart[1] & 0xFF) << 16) |
+                ((newLoopStart[2] & 0xFF) << 8)  |
+                (newLoopStart[3] & 0xFF);
+
+        long loopStartSTM = (loopStartDSP - 2)/2;
+
+        stmRaf.writeInt(audioChannelWithPaddingLength);
+        stmRaf.writeInt((int)loopStartSTM);
+
+        stmRaf.writeInt(audioChannelWithPaddingLength);
+        stmRaf.writeInt(audioChannelWithPaddingLength);
+
+        stmRaf.writeInt((int)loopStartSTM);
+        stmRaf.writeInt((int)loopStartSTM);
+
+        //write last 0x20 bytes of padding for STM header
+        writePaddingBytes(stmRaf, 0x20);
+    }
+
+    private static void alignAudioData(int leftChannelAudioLength, RandomAccessFile stmRaf) throws IOException {
+        if (leftChannelAudioLength % 0x20 != 0) {
+            long bytesToWrite = 0x20 - (leftChannelAudioLength % 0x20);
+            writePaddingBytes(stmRaf, (int)bytesToWrite);
+        }
+    }
+
+    private static void writePaddingBytes(RandomAccessFile stmRaf, int bytes) throws IOException {
+        for (int i=0; i<bytes; i++) {
+            stmRaf.write(0);
         }
     }
 
