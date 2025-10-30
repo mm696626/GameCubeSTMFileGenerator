@@ -11,7 +11,7 @@ import java.io.File;
 
 public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener {
 
-    private JButton pickLeftChannel, pickRightChannel, generateSTM;
+    private JButton pickLeftChannel, pickRightChannel, generateSTM, fixNonLoopingSTMHeader;
     private String leftChannelPath = "";
     private String rightChannelPath = "";
 
@@ -43,6 +43,9 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         generateSTM = new JButton("Generate STM");
         generateSTM.addActionListener(this);
 
+        fixNonLoopingSTMHeader = new JButton("Fix Nonlooping STM Header");
+        fixNonLoopingSTMHeader.addActionListener(this);
+
         stmGBC.gridx = 0; stmGBC.gridy = 0;
         stmPanel.add(pickLeftChannel, stmGBC);
         stmGBC.gridx = 1;
@@ -55,6 +58,9 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
         stmGBC.gridx = 0; stmGBC.gridy = 2;
         stmPanel.add(generateSTM, stmGBC);
+
+        stmGBC.gridx = 1; stmGBC.gridy = 2;
+        stmPanel.add(fixNonLoopingSTMHeader, stmGBC);
 
         stmGeneratorPanel.add(stmPanel);
 
@@ -173,13 +179,41 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             File selectedFile = saveFileChooser.getSelectedFile();
             String sanitizedFileName = sanitizeFileName(selectedFile.getName());
 
-            // Ensure .stm extension
             if (!sanitizedFileName.toLowerCase().endsWith(".stm")) {
                 sanitizedFileName += ".stm";
             }
 
             File outputSTMFile = new File(selectedFile.getParentFile(), sanitizedFileName);
             STMGenerator.generateSTM(leftChannelFile, rightChannelFile, outputSTMFile);
+        }
+
+        if (e.getSource() == fixNonLoopingSTMHeader) {
+
+            int confirm = JOptionPane.showConfirmDialog(
+                    this,
+                    "This is intended only for nonlooping STM files. Are you sure you want to continue?",
+                    "Continue?",
+                    JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirm != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            JFileChooser stmFileChooser = new JFileChooser();
+            stmFileChooser.setDialogTitle("Choose STM File");
+            stmFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            stmFileChooser.setAcceptAllFileFilterUsed(false);
+            stmFileChooser.setFileFilter(new FileNameExtensionFilter("STM Files", "stm"));
+
+            int userSelection = stmFileChooser.showOpenDialog(this);
+            if (userSelection != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+
+            File stmFile = stmFileChooser.getSelectedFile();
+
+            STMGenerator.fixNonLoopingSTMHeader(stmFile);
         }
     }
 }

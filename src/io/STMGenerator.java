@@ -149,6 +149,38 @@ public class STMGenerator {
         }
     }
 
+    public static void fixNonLoopingSTMHeader(File stmFile) {
+        try (RandomAccessFile stmRaf = new RandomAccessFile(stmFile, "rw")) {
+            stmRaf.seek(0x0C);
+
+            stmRaf.write(0xFF);
+            stmRaf.write(0xFF);
+            stmRaf.write(0xFF);
+            stmRaf.write(0xFF);
+
+            stmRaf.seek(0x18);
+
+            stmRaf.write(0x00);
+            stmRaf.write(0x00);
+            stmRaf.write(0x00);
+            stmRaf.write(0x00);
+
+            stmRaf.seek(0x1C);
+
+            stmRaf.write(0x00);
+            stmRaf.write(0x00);
+            stmRaf.write(0x00);
+            stmRaf.write(0x00);
+
+            JOptionPane.showMessageDialog(null, "STM header fixed successfully!");
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
+        }
+    }
+
 
     private static boolean isValidLoopStart(File dspChannel) {
         byte[] loopStartBytes = new byte[DSPFileConstants.LOOP_START_LENGTH_IN_BYTES];
