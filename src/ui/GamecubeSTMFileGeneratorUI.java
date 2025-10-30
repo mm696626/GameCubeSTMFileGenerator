@@ -72,7 +72,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
         gbc.gridx = 0;
         gbc.gridy = 1;
-        gameSongPanel.add(new JLabel("Song:"), gbc);
+        gameSongPanel.add(new JLabel("Song File Name:"), gbc);
 
         songSelector = new JComboBox<>(STMFileNames.PAPER_MARIO_TTYD_FILE_NAMES);
         gbc.gridx = 1;
