@@ -1,5 +1,6 @@
 package ui;
 
+import constants.STMFileNames;
 import io.STMGenerator;
 
 import javax.swing.*;
@@ -8,6 +9,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.Arrays;
 
 public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener {
 
@@ -18,6 +20,9 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private JLabel leftChannelLabel;
     private JLabel rightChannelLabel;
 
+    private JComboBox<String> gameSelector;
+    private JComboBox<String> songSelector;
+
     public GamecubeSTMFileGeneratorUI() {
         setTitle("GameCube STM File Generator");
         generateUI();
@@ -26,6 +31,32 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private void generateUI() {
         JPanel stmGeneratorPanel = new JPanel();
         stmGeneratorPanel.setLayout(new BoxLayout(stmGeneratorPanel, BoxLayout.Y_AXIS));
+
+        JPanel gameSongPanel = new JPanel(new GridBagLayout());
+        gameSongPanel.setBorder(BorderFactory.createTitledBorder("Game and Song Selection"));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0;
+        gameSongPanel.add(new JLabel("Game:"), gbc);
+
+
+        gameSelector = new JComboBox<>(new String[]{"Paper Mario: The Thousand-Year Door", "Fire Emblem: Path of Radiance", "Cubivore"});
+        gameSelector.addActionListener(e -> updateSongList());
+
+        songSelector = new JComboBox<>(STMFileNames.PAPER_MARIO_TTYD_FILE_NAMES);
+
+        gbc.gridx = 1;
+        gameSongPanel.add(gameSelector, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gameSongPanel.add(new JLabel("Song:"), gbc);
+
+        gbc.gridx = 1;
+        gameSongPanel.add(songSelector, gbc);
 
         JPanel stmPanel = new JPanel(new GridBagLayout());
         GridBagConstraints stmGBC = new GridBagConstraints();
@@ -62,11 +93,46 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         stmGBC.gridx = 1; stmGBC.gridy = 2;
         stmPanel.add(fixNonLoopingSTMHeader, stmGBC);
 
+        stmGeneratorPanel.add(gameSongPanel);
+        stmGeneratorPanel.add(Box.createVerticalStrut(10));
         stmGeneratorPanel.add(stmPanel);
 
         setLayout(new BorderLayout());
         add(stmGeneratorPanel, BorderLayout.CENTER);
     }
+
+    private void updateSongList() {
+        String[] songNameArray = getSongArrayForSelectedGame();
+
+        if (songSelector == null) {
+            songSelector = new JComboBox<>();
+        }
+
+        if (songNameArray != null) {
+            Arrays.sort(songNameArray);
+            songSelector.setModel(new DefaultComboBoxModel<>(songNameArray));
+        } else {
+            songSelector.setModel(new DefaultComboBoxModel<>(new String[]{}));
+        }
+
+        songSelector.revalidate();
+        songSelector.repaint();
+    }
+
+    private String[] getSongArrayForSelectedGame() {
+        String selectedGame = (String) gameSelector.getSelectedItem();
+        if (selectedGame == null) return null;
+
+        switch (selectedGame) {
+            case "Cubivore":
+                return STMFileNames.CUBIVORE_FILE_NAMES;
+            case "Fire Emblem: Path of Radiance":
+                return STMFileNames.FIRE_EMBLEM_POR_FILE_NAMES;
+            default:
+                return STMFileNames.PAPER_MARIO_TTYD_FILE_NAMES;
+        }
+    }
+
 
     private void chooseDSP(boolean isLeft) {
         JFileChooser dspFileChooser = new JFileChooser();
@@ -136,11 +202,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         return null;
     }
 
-    private String sanitizeFileName(String name) {
-        return name.replaceAll("[^a-zA-Z0-9_ ]", "");
-    }
-
-
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == pickLeftChannel) {
@@ -165,30 +226,30 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 return;
             }
 
-            JFileChooser saveFileChooser = new JFileChooser();
-            saveFileChooser.setDialogTitle("Save STM File");
-            saveFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            saveFileChooser.setAcceptAllFileFilterUsed(false);
-            saveFileChooser.setFileFilter(new FileNameExtensionFilter("STM Files", "stm"));
+            String selectedSong = (String) songSelector.getSelectedItem();
+            if (selectedSong == null || selectedSong.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please select a song name before generating.");
+                return;
+            }
 
-            int userSelection = saveFileChooser.showSaveDialog(this);
+            JFileChooser folderChooser = new JFileChooser();
+            folderChooser.setDialogTitle("Select Output Folder");
+            folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            folderChooser.setAcceptAllFileFilterUsed(false);
+
+            int userSelection = folderChooser.showOpenDialog(this);
             if (userSelection != JFileChooser.APPROVE_OPTION) {
                 return;
             }
 
-            File selectedFile = saveFileChooser.getSelectedFile();
-            String sanitizedFileName = sanitizeFileName(selectedFile.getName());
+            File outputDir = folderChooser.getSelectedFile();
 
-            if (!sanitizedFileName.toLowerCase().endsWith(".stm")) {
-                sanitizedFileName += ".stm";
-            }
+            File outputSTMFile = new File(outputDir, selectedSong);
 
-            File outputSTMFile = new File(selectedFile.getParentFile(), sanitizedFileName);
             STMGenerator.generateSTM(leftChannelFile, rightChannelFile, outputSTMFile);
         }
 
         if (e.getSource() == fixNonLoopingSTMHeader) {
-
             int confirm = JOptionPane.showConfirmDialog(
                     this,
                     "This is intended only for nonlooping STM files. Are you sure you want to continue?",
@@ -212,7 +273,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             }
 
             File stmFile = stmFileChooser.getSelectedFile();
-
             STMGenerator.fixNonLoopingSTMHeader(stmFile);
         }
     }
