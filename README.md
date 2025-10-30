@@ -33,24 +33,24 @@
 
 ### STM Format Documentation
 * STM Header
-* 2 bytes - Version Number? (always 2)
-* 2 bytes - Sample Rate
-* 4 bytes - Channel Count (mostly 2) (rarely mono)
-* 4 bytes - Audio Channel Data Length (it's the audio data + whatever rounding gets you to the next 0x20 boundary. If the file size is divisible, then keep it as is)
-* 4 bytes - STM Loop Start (must be the start loop in the DSP header - 2 / 2) (the game will crash if the lowest byte isn't 0x02, 0x42, 0x82, or 0xC2 since the loop in the STM header must be exactly divisible by 0x20) (FFFFFFFF if non looping)
-* 4 bytes - Audio Channel Data Length (same as above)
-* 4 bytes - Audio Channel Data Length (same as above)
-* 4 bytes - STM Loop Start (same as above) (00000000 if non looping)
-* 4 bytes - STM Loop Start (same as above) (00000000 if non looping)
-* 0x20 bytes of 00 padding
+  * 2 bytes - Version Number? (always 2)
+  * 2 bytes - Sample Rate
+  * 4 bytes - Channel Count (mostly 2) (rarely mono)
+  * 4 bytes - Audio Channel Data Length (it's the audio data + whatever rounding gets you to the next 0x20 boundary. If the file size is divisible, then keep it as is)
+  * 4 bytes - STM Loop Start (must be the start loop in the DSP header - 2 / 2) (the game will crash if the lowest byte isn't 0x02, 0x42, 0x82, or 0xC2 since the loop in the STM header must be exactly divisible by 0x20) (FFFFFFFF if non looping)
+  * 4 bytes - Audio Channel Data Length (same as above)
+  * 4 bytes - Audio Channel Data Length (same as above)
+  * 4 bytes - STM Loop Start (same as above) (00000000 if non looping)
+  * 4 bytes - STM Loop Start (same as above) (00000000 if non looping)
+  * 0x20 bytes of 00 padding
 
 * The Rest of the STM
-* Left Channel DSP Header
-* Right Channel DSP Header
-* Left channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing)
-* 0x20 bytes of padding (used for interleaving)
-* Right channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing)
-* 0x8000 bytes of 00 padding at the EOF
+  * Left Channel DSP Header
+  * Right Channel DSP Header
+  * Left channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing)
+  * 0x20 bytes of padding (used for interleaving)
+  * Right channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing)
+  * 0x8000 bytes of 00 padding at the EOF
 
 ### Special Thanks/Credits
 * This documentation on the STM header and DSP format helped a lot too
