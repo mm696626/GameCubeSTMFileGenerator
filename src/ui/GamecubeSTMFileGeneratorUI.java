@@ -137,7 +137,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     }
 
     private String sanitizeFileName(String name) {
-        return name.replaceAll("[^a-zA-Z0-9 ]", "");
+        return name.replaceAll("[^a-zA-Z0-9_ ]", "");
     }
 
 
