@@ -130,6 +130,11 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         return null;
     }
 
+    private String sanitizeFileName(String name) {
+        return name.replaceAll("[^a-zA-Z0-9 ]", "");
+    }
+
+
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == pickLeftChannel) {
@@ -139,7 +144,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         if (e.getSource() == pickRightChannel) {
             chooseDSP(false);
         }
-
 
         if (e.getSource() == generateSTM) {
             if (leftChannelPath.isEmpty() || rightChannelPath.isEmpty()) {
@@ -155,8 +159,27 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 return;
             }
 
+            JFileChooser saveFileChooser = new JFileChooser();
+            saveFileChooser.setDialogTitle("Save STM File");
+            saveFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            saveFileChooser.setAcceptAllFileFilterUsed(false);
+            saveFileChooser.setFileFilter(new FileNameExtensionFilter("STM Files", "stm"));
 
-            STMGenerator.generateSTM(leftChannelFile, rightChannelFile);
+            int userSelection = saveFileChooser.showSaveDialog(this);
+            if (userSelection != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+
+            File selectedFile = saveFileChooser.getSelectedFile();
+            String sanitizedFileName = sanitizeFileName(selectedFile.getName());
+
+            // Ensure .stm extension
+            if (!sanitizedFileName.toLowerCase().endsWith(".stm")) {
+                sanitizedFileName += ".stm";
+            }
+
+            File outputSTMFile = new File(selectedFile.getParentFile(), sanitizedFileName);
+            STMGenerator.generateSTM(leftChannelFile, rightChannelFile, outputSTMFile);
         }
     }
 }

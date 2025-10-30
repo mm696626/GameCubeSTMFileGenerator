@@ -8,14 +8,14 @@ import java.io.RandomAccessFile;
 
 public class STMGenerator {
 
-    public static void generateSTM(File leftChannel, File rightChannel) {
+    public static void generateSTM(File leftChannel, File rightChannel, File outputSTMFile) {
 
         if (!isValidLoopStart(leftChannel) || !isValidLoopStart(rightChannel)) {
             JOptionPane.showMessageDialog(null, "One or both of your channels has an invalid loop start for the STM format!");
             return;
         }
 
-        try (RandomAccessFile stmRaf = new RandomAccessFile("output.stm", "rw")) {
+        try (RandomAccessFile stmRaf = new RandomAccessFile(outputSTMFile, "rw")) {
 
             //version number (always 2)
             stmRaf.write(0x02);
@@ -67,11 +67,12 @@ public class STMGenerator {
             stmRaf.writeInt((int)loopStartSTM);
             stmRaf.writeInt((int)loopStartSTM);
 
-
+            //write last 0x20 bytes of padding for STM header
             for (int i=0; i<0x20; i++) {
                 stmRaf.write(0x00);
             }
 
+            //read and write DSP channel headers
             byte[] leftChannelHeader = new byte[0x60];
             try (RandomAccessFile leftChannelRaf = new RandomAccessFile(leftChannel, "r")) {
                 leftChannelRaf.seek(0x0);
@@ -87,7 +88,7 @@ public class STMGenerator {
             stmRaf.write(leftChannelHeader);
             stmRaf.write(rightChannelHeader);
 
-            //read left channel audio data
+            //read and write left channel audio data
             byte[] newDSPLeftChannelAudio;
 
             try (RandomAccessFile leftChannelRaf = new RandomAccessFile(leftChannel, "r")) {
@@ -99,6 +100,7 @@ public class STMGenerator {
 
             stmRaf.write(newDSPLeftChannelAudio);
 
+            //pad left channel audio to 0x20 boundary
             if (leftChannelAudioLength % 0x20 != 0) {
                 long bytesToWrite = 0x20 - (leftChannelAudioLength % 0x20);
 
@@ -107,11 +109,12 @@ public class STMGenerator {
                 }
             }
 
+            //write 0x20 bytes of padding between channels
             for (int i=0; i<0x20; i++) {
                 stmRaf.write(0);
             }
 
-            //read left channel audio data
+            //read and write right channel audio data
             byte[] newDSPRightChannelAudio;
 
             try (RandomAccessFile rightChannelRaf = new RandomAccessFile(rightChannel, "r")) {
@@ -123,6 +126,7 @@ public class STMGenerator {
 
             stmRaf.write(newDSPRightChannelAudio);
 
+            //pad right channel audio to 0x20 boundary
             if (leftChannelAudioLength % 0x20 != 0) {
                 long bytesToWrite = 0x20 - (leftChannelAudioLength % 0x20);
 
@@ -131,6 +135,7 @@ public class STMGenerator {
                 }
             }
 
+            //write last 0x8000 bytes of padding all STM files have
             for (int i=0; i<0x8000; i++) {
                 stmRaf.write(0);
             }
