@@ -3,12 +3,14 @@ package io;
 import constants.DSPFileConstants;
 
 import javax.swing.*;
-import java.io.File;
-import java.io.RandomAccessFile;
+import java.io.*;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.TreeMap;
 
 public class STMGenerator {
 
-    public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile) {
+    public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile, String songFileName, String selectedGame) {
 
         if (!isValidLoopStart(leftChannel) || !isValidLoopStart(rightChannel)) {
             JOptionPane.showMessageDialog(null, "One or both of your channels has an invalid loop start for the STM format!");
@@ -140,6 +142,7 @@ public class STMGenerator {
                 stmRaf.write(0);
             }
 
+            logSongReplacement(songFileName, leftChannel, rightChannel, selectedGame);
             return true;
         }
         catch (Exception e) {
@@ -204,5 +207,44 @@ public class STMGenerator {
         }
 
         return false;
+    }
+
+    private static void logSongReplacement(String songFileName, File leftChannel, File rightChannel, String selectedGame) {
+        File songReplacementsFolder = new File("song_replacements");
+        if (!songReplacementsFolder.exists()) {
+            songReplacementsFolder.mkdirs();
+        }
+
+        File logFile = new File("song_replacements", selectedGame + ".txt");
+
+        Map<String, String> songMap = new TreeMap<>();
+
+        if (logFile.exists()) {
+            try (Scanner inputStream = new Scanner(new FileInputStream(logFile))) {
+                while (inputStream.hasNextLine()) {
+                    String line = inputStream.nextLine();
+                    String[] parts = line.split("\\|");
+
+                    if (parts.length >= 3) {
+                        String existingSongFileName = parts[0];
+                        String left = parts[1];
+                        String right = parts[2];
+                        songMap.put(existingSongFileName, left + "|" + right);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        songMap.put(songFileName, leftChannel.getName() + "|" + rightChannel.getName());
+
+        try (PrintWriter outputStream = new PrintWriter(new FileOutputStream(logFile))) {
+            for (Map.Entry<String, String> entry : songMap.entrySet()) {
+                outputStream.println(entry.getKey() + "|" + entry.getValue());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

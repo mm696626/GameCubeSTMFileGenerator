@@ -2,14 +2,17 @@ package ui;
 
 import constants.STMFileNames;
 import io.STMGenerator;
+import uihelpers.DSPPair;
 import uihelpers.GenerateJob;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener {
@@ -17,6 +20,8 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private JButton pickLeftChannel, pickRightChannel, generateSTM, fixNonLoopingSTMHeader;
     private String leftChannelPath = "";
     private String rightChannelPath = "";
+
+    private File savedDSPFolder;
 
     private JLabel leftChannelLabel;
     private JLabel rightChannelLabel;
@@ -27,6 +32,8 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private DefaultListModel<GenerateJob> jobQueueModel;
     private JList<GenerateJob> jobQueueList;
     private JButton addToQueueButton, removeQueueButton, clearQueueButton, runBatchButton;
+
+    private JCheckBox autoAddToQueue;
 
 
     public GamecubeSTMFileGeneratorUI() {
@@ -100,6 +107,10 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         stmGBC.gridx = 1; stmGBC.gridy = 2;
         stmPanel.add(fixNonLoopingSTMHeader, stmGBC);
 
+        autoAddToQueue = new JCheckBox("Automatically Add DSP Pairs from DSP Folder to Queue");
+        stmGBC.gridx = 0; stmGBC.gridy = 3;
+        stmPanel.add(autoAddToQueue, stmGBC);
+
         stmGeneratorPanel.add(gameSongPanel);
         stmGeneratorPanel.add(Box.createVerticalStrut(10));
         stmGeneratorPanel.add(stmPanel);
@@ -171,6 +182,205 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         }
     }
 
+    private void useSavedDSPFolder() {
+        if (savedDSPFolder == null) return;
+
+        ArrayList<DSPPair> dspPairs = DSPPair.detectDSPPairs(savedDSPFolder);
+
+        if (dspPairs.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No matching DSP pairs found in the saved folder.");
+            savedDSPFolder = null;
+            return;
+        }
+
+        DSPPair selectedPair = showSearchableDSPDialog(dspPairs);
+        if (selectedPair != null) {
+            leftChannelPath = selectedPair.getLeft().getAbsolutePath();
+            rightChannelPath = selectedPair.getRight().getAbsolutePath();
+            leftChannelLabel.setText(selectedPair.getLeft().getName());
+            rightChannelLabel.setText(selectedPair.getRight().getName());
+
+            if (autoAddToQueue.isSelected()) {
+                addToQueue();
+            }
+        }
+    }
+
+    private DSPPair showSearchableDSPDialog(ArrayList<DSPPair> dspPairs) {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Select DSP Pair", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(400, 300);
+        dialog.setLocationRelativeTo(this);
+
+        JTextField searchField = new JTextField();
+        dialog.add(searchField, BorderLayout.NORTH);
+
+        DefaultListModel<DSPPair> listModel = new DefaultListModel<>();
+        dspPairs.forEach(listModel::addElement);
+
+        JList<DSPPair> dspList = new JList<>(listModel);
+        dspList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        dspList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof DSPPair pair) {
+                    setText(pair.getLeft().getName() + " / " + pair.getRight().getName());
+                }
+                return this;
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(dspList);
+        dialog.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton okButton = new JButton("OK");
+        JButton cancelButton = new JButton("Cancel");
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            private void update() {
+                String filter = searchField.getText().trim().toLowerCase();
+                listModel.clear();
+                for (DSPPair pair : dspPairs) {
+                    String name = pair.getLeft().getName().toLowerCase() + " " + pair.getRight().getName().toLowerCase();
+                    if (name.contains(filter)) listModel.addElement(pair);
+                }
+            }
+            public void insertUpdate(DocumentEvent e) { update(); }
+            public void removeUpdate(DocumentEvent e) { update(); }
+            public void changedUpdate(DocumentEvent e) { update(); }
+        });
+
+        final DSPPair[] selectedPair = {null};
+
+        dspList.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER && dspList.getSelectedValue() != null) {
+                    selectedPair[0] = dspList.getSelectedValue();
+                    dialog.dispose();
+                }
+            }
+        });
+
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER && dspList.getSelectedValue() != null) {
+                    selectedPair[0] = dspList.getSelectedValue();
+                    dialog.dispose();
+                }
+            }
+        });
+
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                int code = e.getKeyCode();
+                int size = dspList.getModel().getSize();
+                int index = dspList.getSelectedIndex();
+
+                if (code == KeyEvent.VK_DOWN) {
+                    if (size > 0) {
+                        if (index < size - 1) dspList.setSelectedIndex(index + 1);
+                        else dspList.setSelectedIndex(0);
+                        dspList.ensureIndexIsVisible(dspList.getSelectedIndex());
+                    }
+                    e.consume();
+                } else if (code == KeyEvent.VK_UP) {
+                    if (size > 0) {
+                        if (index > 0) dspList.setSelectedIndex(index - 1);
+                        else dspList.setSelectedIndex(size - 1);
+                        dspList.ensureIndexIsVisible(dspList.getSelectedIndex());
+                    }
+                    e.consume();
+                }
+            }
+        });
+
+        okButton.addActionListener(e -> {
+            selectedPair[0] = dspList.getSelectedValue();
+            dialog.dispose();
+        });
+
+        cancelButton.addActionListener(e -> dialog.dispose());
+
+        dspList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && dspList.getSelectedValue() != null) {
+                    selectedPair[0] = dspList.getSelectedValue();
+                    dialog.dispose();
+                }
+            }
+        });
+
+        dialog.setVisible(true);
+        return selectedPair[0];
+    }
+
+    private void chooseLeftChannelPath() {
+        if (savedDSPFolder != null) {
+            useSavedDSPFolder();
+            return;
+        }
+
+        int response = JOptionPane.showConfirmDialog(
+                this,
+                "Would you like to pick a folder of DSPs to select a song from?\n(Your choice will be remembered until closing the program or if you set a default folder)",
+                "Choose DSP Folder",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (response == JOptionPane.YES_OPTION) {
+            JFileChooser dspFolderChooser = new JFileChooser();
+            dspFolderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            dspFolderChooser.setDialogTitle("Select Folder with DSP Files");
+            dspFolderChooser.setAcceptAllFileFilterUsed(false);
+
+            int folderSelected = dspFolderChooser.showOpenDialog(this);
+            if (folderSelected == JFileChooser.APPROVE_OPTION) {
+                savedDSPFolder = dspFolderChooser.getSelectedFile();
+                useSavedDSPFolder();
+            }
+        } else {
+            chooseDSP(true);
+        }
+    }
+
+    private void chooseRightChannelPath() {
+        if (savedDSPFolder != null) {
+            useSavedDSPFolder();
+            return;
+        }
+
+        int response = JOptionPane.showConfirmDialog(
+                this,
+                "Would you like to pick a folder of DSPs to select a song from?\n(Your choice will be remembered until closing the program or if you set a default folder)",
+                "Choose DSP Folder",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (response == JOptionPane.YES_OPTION) {
+            JFileChooser dspFolderChooser = new JFileChooser();
+            dspFolderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            dspFolderChooser.setDialogTitle("Select Folder with DSP Files");
+            dspFolderChooser.setAcceptAllFileFilterUsed(false);
+
+            int folderSelected = dspFolderChooser.showOpenDialog(this);
+            if (folderSelected == JFileChooser.APPROVE_OPTION) {
+                savedDSPFolder = dspFolderChooser.getSelectedFile();
+                useSavedDSPFolder();
+            }
+        } else {
+            chooseDSP(false);
+        }
+    }
 
     private void chooseDSP(boolean isLeft) {
         JFileChooser dspFileChooser = new JFileChooser();
@@ -228,6 +438,10 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             otherChannelName = fileName.replace("(channel 0).dsp", "(channel 1).dsp");
         } else if (fileName.endsWith("(channel 1).dsp") && !isLeftSelected) {
             otherChannelName = fileName.replace("(channel 1).dsp", "(channel 0).dsp");
+        } else if (fileName.endsWith("_l.dsp") && isLeftSelected) {
+            otherChannelName = fileName.replace("_l.dsp", "_r.dsp");
+        } else if (fileName.endsWith("_r.dsp") && !isLeftSelected) {
+            otherChannelName = fileName.replace("_r.dsp", "_l.dsp");
         }
 
         if (otherChannelName != null) {
@@ -253,11 +467,11 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == pickLeftChannel) {
-            chooseDSP(true);
+            chooseLeftChannelPath();
         }
 
         if (e.getSource() == pickRightChannel) {
-            chooseDSP(false);
+            chooseRightChannelPath();
         }
 
         if (e.getSource() == generateSTM) {
@@ -280,6 +494,14 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 return;
             }
 
+            String selectedGame = (String) gameSelector.getSelectedItem();
+            if (selectedGame == null || selectedGame.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please select a game before generating.");
+                return;
+            }
+
+            selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
+
             JFileChooser folderChooser = new JFileChooser();
             folderChooser.setDialogTitle("Select Output Folder");
             folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -298,7 +520,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 outputSTMFile.delete();
             }
 
-            boolean generatedSuccessfully = STMGenerator.generateSTM(leftChannelFile, rightChannelFile, outputSTMFile);
+            boolean generatedSuccessfully = STMGenerator.generateSTM(leftChannelFile, rightChannelFile, outputSTMFile, selectedSong, selectedGame);
 
             if (generatedSuccessfully) {
                 JOptionPane.showMessageDialog(null, "STM file generated successfully!");
@@ -377,6 +599,16 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                     continue;
                 }
 
+
+                String selectedGame = (String) gameSelector.getSelectedItem();
+
+                if (selectedGame == null || selectedGame.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Please select a game before generating.");
+                    return;
+                }
+
+                selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
+
                 String selectedSong = generateJob.getSongFileName();
                 File outputSTMFile = new File(outputDir, selectedSong);
 
@@ -384,7 +616,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                     outputSTMFile.delete();
                 }
 
-                boolean generatedSuccessfully = STMGenerator.generateSTM(leftDSP, rightDSP, outputSTMFile);
+                boolean generatedSuccessfully = STMGenerator.generateSTM(leftDSP, rightDSP, outputSTMFile, selectedSong, selectedGame);
 
                 if (!generatedSuccessfully) {
                     JOptionPane.showMessageDialog(null, "Something went wrong with the job for " + generateJob.getSongFileName());
