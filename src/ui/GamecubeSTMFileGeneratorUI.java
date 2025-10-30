@@ -18,7 +18,7 @@ import java.util.Scanner;
 
 public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener {
 
-    private JButton pickLeftChannel, pickRightChannel, generateSTM, fixNonLoopingSTMHeader;
+    private JButton pickLeftChannel, pickRightChannel, generateSTM, fixNonLoopingSTMHeader, fixNonLoopingSTMHeaderFolder;
     private String leftChannelPath = "";
     private String rightChannelPath = "";
 
@@ -95,6 +95,9 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         fixNonLoopingSTMHeader = new JButton("Fix Nonlooping STM Header");
         fixNonLoopingSTMHeader.addActionListener(this);
 
+        fixNonLoopingSTMHeaderFolder = new JButton("Fix Nonlooping STM Headers (Folder)");
+        fixNonLoopingSTMHeaderFolder.addActionListener(this);
+
         stmGBC.gridx = 0; stmGBC.gridy = 0;
         stmPanel.add(pickLeftChannel, stmGBC);
         stmGBC.gridx = 1;
@@ -109,6 +112,8 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         stmPanel.add(generateSTM, stmGBC);
         stmGBC.gridx = 1;
         stmPanel.add(fixNonLoopingSTMHeader, stmGBC);
+        stmGBC.gridx = 2;
+        stmPanel.add(fixNonLoopingSTMHeaderFolder, stmGBC);
 
         autoAddToQueue = new JCheckBox("Automatically Add DSP Pairs from DSP Folder to Queue");
         stmGBC.gridx = 0; stmGBC.gridy = 3;
@@ -670,7 +675,54 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             }
 
             File stmFile = stmFileChooser.getSelectedFile();
-            STMGenerator.fixNonLoopingSTMHeader(stmFile);
+
+            boolean successful = STMGenerator.fixNonLoopingSTMHeader(stmFile);
+
+            if (successful) {
+                JOptionPane.showMessageDialog(null, "STM header fixed successfully!");
+            }
+        }
+
+        if (e.getSource() == fixNonLoopingSTMHeaderFolder) {
+            int confirm = JOptionPane.showConfirmDialog(
+                    this,
+                    "This is intended only for a folder of nonlooping STM files. Are you sure you want to continue?",
+                    "Continue?",
+                    JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirm != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            JFileChooser stmFolderChooser = new JFileChooser();
+            stmFolderChooser.setDialogTitle("Select STM Folder");
+            stmFolderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            stmFolderChooser.setAcceptAllFileFilterUsed(false);
+
+            int userSelection = stmFolderChooser.showOpenDialog(this);
+            if (userSelection != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+
+            File stmFolder = stmFolderChooser.getSelectedFile();
+            File[] stmFiles = stmFolder.listFiles((_, name) -> name.toLowerCase().endsWith(".stm"));
+
+            if (stmFiles == null || stmFiles.length == 0) {
+                JOptionPane.showMessageDialog(this, "No STM files found in the selected folder.", "No Files", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            for (File stmFile : stmFiles) {
+                try {
+                    STMGenerator.fixNonLoopingSTMHeader(stmFile);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error processing file: " + stmFile.getName(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+            JOptionPane.showMessageDialog(null, "STM headers fixed successfully!");
         }
 
         if (e.getSource() == addToQueueButton) {

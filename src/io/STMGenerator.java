@@ -152,7 +152,7 @@ public class STMGenerator {
         }
     }
 
-    public static void fixNonLoopingSTMHeader(File stmFile) {
+    public static boolean fixNonLoopingSTMHeader(File stmFile) {
         try (RandomAccessFile stmRaf = new RandomAccessFile(stmFile, "rw")) {
             stmRaf.seek(0x0C);
 
@@ -175,12 +175,12 @@ public class STMGenerator {
             stmRaf.write(0x00);
             stmRaf.write(0x00);
 
-            JOptionPane.showMessageDialog(null, "STM header fixed successfully!");
-
+            return true;
         }
         catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
+            return false;
         }
     }
 
