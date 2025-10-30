@@ -13,7 +13,7 @@ public class STMGenerator {
     public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile, String songFileName, String selectedGame) {
 
         if (!isValidLoopStart(leftChannel) || !isValidLoopStart(rightChannel)) {
-            JOptionPane.showMessageDialog(null, "One or both of your channels has an invalid loop start for the STM format!");
+            JOptionPane.showMessageDialog(null, "One or both of your channels for " + songFileName + " has an invalid loop start for the STM format!");
             return false;
         }
 
