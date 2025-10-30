@@ -1,5 +1,4 @@
 # GameCubeSTMFileGenerator
-A tool to generate STM files for GameCube games
 
 ### GameCube STM File Generator
 * A tool allows you to generate STM files (the music files used in Paper Mario The Thousand-Year Door, Fire Emblem Path of Radiance, and Cubivore)
