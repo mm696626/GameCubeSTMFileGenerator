@@ -23,11 +23,14 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private String rightChannelPath = "";
 
     private File savedDSPFolder;
+    private File savedOutputFolder;
     private File defaultSavedDSPFolder;
+    private File defaultOutputFolder;
 
     private JLabel leftChannelLabel;
     private JLabel rightChannelLabel;
     private JLabel defaultDSPFolderLabel;
+    private JLabel defaultOutputFolderLabel;
 
     private JComboBox<String> gameSelector;
     private JComboBox<String> songSelector;
@@ -171,10 +174,23 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         settingsGBC.gridx = 2;
         settingsPanel.add(chooseDefaultDSPButton, settingsGBC);
 
+        settingsGBC.gridx = 0;
+        settingsGBC.gridy = 1;
+        settingsPanel.add(new JLabel("Default Output Folder:"), settingsGBC);
+
+        defaultOutputFolderLabel = new JLabel(defaultOutputFolder != null ? defaultOutputFolder.getAbsolutePath() : "None");
+        settingsGBC.gridx = 1;
+        settingsPanel.add(defaultOutputFolderLabel, settingsGBC);
+
+        JButton chooseDefaultOutputFolderButton = new JButton("Change");
+        chooseDefaultOutputFolderButton.addActionListener(e -> chooseDefaultOutputFolder());
+        settingsGBC.gridx = 2;
+        settingsPanel.add(chooseDefaultOutputFolderButton, settingsGBC);
+
         JButton resetGeneratorSettingsButton = new JButton("Reset Generator Settings");
         resetGeneratorSettingsButton.addActionListener(e -> resetGeneratorSettings());
         settingsGBC.gridx = 0;
-        settingsGBC.gridy = 1;
+        settingsGBC.gridy = 2;
         settingsGBC.gridwidth = 3;
         settingsPanel.add(resetGeneratorSettingsButton, settingsGBC);
 
@@ -214,10 +230,17 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 if (key.equals("defaultSavedDSPFolder")) {
                     if (!value.equals("None")) defaultSavedDSPFolder = new File(value);
                 }
+                if (key.equals("defaultOutputFolder")) {
+                    if (!value.equals("None")) defaultOutputFolder = new File(value);
+                }
             }
 
             if (defaultSavedDSPFolder != null && defaultSavedDSPFolder.exists()) {
                 savedDSPFolder = defaultSavedDSPFolder;
+            }
+
+            if (defaultOutputFolder != null && defaultOutputFolder.exists()) {
+                savedOutputFolder = defaultOutputFolder;
             }
 
         } catch (FileNotFoundException e) {
@@ -240,9 +263,25 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         }
     }
 
+    private void chooseDefaultOutputFolder() {
+        JFileChooser defaultOutputFolderChooser = new JFileChooser();
+        defaultOutputFolderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        defaultOutputFolderChooser.setDialogTitle("Select Default Output Folder");
+        defaultOutputFolderChooser.setAcceptAllFileFilterUsed(false);
+        int result = defaultOutputFolderChooser.showOpenDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            defaultOutputFolder = defaultOutputFolderChooser.getSelectedFile();
+            defaultOutputFolderLabel.setText(defaultOutputFolder.getAbsolutePath());
+            savedOutputFolder = defaultOutputFolder;
+            saveSettingsToFile();
+        }
+    }
+
     private void saveSettingsToFile() {
         try (PrintWriter writer = new PrintWriter(new FileOutputStream("settings.txt"))) {
             writer.println("defaultSavedDSPFolder:" + (defaultSavedDSPFolder != null ? defaultSavedDSPFolder.getAbsolutePath() : "None"));
+            writer.println("defaultOutputFolder:" + (defaultOutputFolder != null ? defaultOutputFolder.getAbsolutePath() : "None"));
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to save settings: " + e.getMessage());
         }
@@ -626,17 +665,24 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
 
-            JFileChooser folderChooser = new JFileChooser();
-            folderChooser.setDialogTitle("Select Output Folder");
-            folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            folderChooser.setAcceptAllFileFilterUsed(false);
+            File outputDir;
 
-            int userSelection = folderChooser.showOpenDialog(this);
-            if (userSelection != JFileChooser.APPROVE_OPTION) {
-                return;
+            if (savedOutputFolder != null && savedOutputFolder.exists()) {
+                outputDir = savedOutputFolder;
             }
+            else {
+                JFileChooser folderChooser = new JFileChooser();
+                folderChooser.setDialogTitle("Select Output Folder");
+                folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                folderChooser.setAcceptAllFileFilterUsed(false);
 
-            File outputDir = folderChooser.getSelectedFile();
+                int userSelection = folderChooser.showOpenDialog(this);
+                if (userSelection != JFileChooser.APPROVE_OPTION) {
+                    return;
+                }
+
+                outputDir = folderChooser.getSelectedFile();
+            }
 
             File outputSTMFile = new File(outputDir, selectedSong);
 
@@ -746,17 +792,24 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 return;
             }
 
-            JFileChooser folderChooser = new JFileChooser();
-            folderChooser.setDialogTitle("Select Output Folder");
-            folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            folderChooser.setAcceptAllFileFilterUsed(false);
+            File outputDir;
 
-            int userSelection = folderChooser.showOpenDialog(this);
-            if (userSelection != JFileChooser.APPROVE_OPTION) {
-                return;
+            if (savedOutputFolder != null && savedOutputFolder.exists()) {
+                outputDir = savedOutputFolder;
             }
+            else {
+                JFileChooser folderChooser = new JFileChooser();
+                folderChooser.setDialogTitle("Select Output Folder");
+                folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                folderChooser.setAcceptAllFileFilterUsed(false);
 
-            File outputDir = folderChooser.getSelectedFile();
+                int userSelection = folderChooser.showOpenDialog(this);
+                if (userSelection != JFileChooser.APPROVE_OPTION) {
+                    return;
+                }
+
+                outputDir = folderChooser.getSelectedFile();
+            }
 
             for (int i = 0; i < jobQueueModel.size(); i++) {
                 GenerateJob generateJob = jobQueueModel.getElementAt(i);
