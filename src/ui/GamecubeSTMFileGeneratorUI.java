@@ -11,9 +11,10 @@ import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Scanner;
 
 public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener {
 
@@ -22,9 +23,11 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private String rightChannelPath = "";
 
     private File savedDSPFolder;
+    private File defaultSavedDSPFolder;
 
     private JLabel leftChannelLabel;
     private JLabel rightChannelLabel;
+    private JLabel defaultDSPFolderLabel;
 
     private JComboBox<String> gameSelector;
     private JComboBox<String> songSelector;
@@ -38,29 +41,29 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
     public GamecubeSTMFileGeneratorUI() {
         setTitle("GameCube STM File Generator");
+        initSettingsFile();
+        loadSettingsFile();
         generateUI();
     }
 
     private void generateUI() {
+        JTabbedPane tabbedPane = new JTabbedPane();
+
         JPanel stmGeneratorPanel = new JPanel();
         stmGeneratorPanel.setLayout(new BoxLayout(stmGeneratorPanel, BoxLayout.Y_AXIS));
 
         JPanel gameSongPanel = new JPanel(new GridBagLayout());
         gameSongPanel.setBorder(BorderFactory.createTitledBorder("Game and Song Selection"));
-
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         gbc.gridx = 0;
+        gbc.gridy = 0;
         gameSongPanel.add(new JLabel("Game:"), gbc);
-
 
         gameSelector = new JComboBox<>(new String[]{"Paper Mario: The Thousand-Year Door", "Fire Emblem: Path of Radiance", "Cubivore"});
         gameSelector.addActionListener(e -> updateSongList());
-
-        songSelector = new JComboBox<>(STMFileNames.PAPER_MARIO_TTYD_FILE_NAMES);
-
         gbc.gridx = 1;
         gameSongPanel.add(gameSelector, gbc);
 
@@ -68,6 +71,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         gbc.gridy = 1;
         gameSongPanel.add(new JLabel("Song:"), gbc);
 
+        songSelector = new JComboBox<>(STMFileNames.PAPER_MARIO_TTYD_FILE_NAMES);
         gbc.gridx = 1;
         gameSongPanel.add(songSelector, gbc);
 
@@ -103,8 +107,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
         stmGBC.gridx = 0; stmGBC.gridy = 2;
         stmPanel.add(generateSTM, stmGBC);
-
-        stmGBC.gridx = 1; stmGBC.gridy = 2;
+        stmGBC.gridx = 1;
         stmPanel.add(fixNonLoopingSTMHeader, stmGBC);
 
         autoAddToQueue = new JCheckBox("Automatically Add DSP Pairs from DSP Folder to Queue");
@@ -115,16 +118,12 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         stmGeneratorPanel.add(Box.createVerticalStrut(10));
         stmGeneratorPanel.add(stmPanel);
 
-        setLayout(new BorderLayout());
-        add(stmGeneratorPanel, BorderLayout.CENTER);
-
         JPanel queuePanel = new JPanel(new BorderLayout());
         queuePanel.setBorder(BorderFactory.createTitledBorder("Batch Generation Job Queue"));
 
         jobQueueModel = new DefaultListModel<>();
         jobQueueList = new JList<>(jobQueueModel);
         jobQueueList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         JScrollPane scrollPane = new JScrollPane(jobQueueList);
 
         JPanel queueButtonPanel = new JPanel(new GridLayout(1, 4, 5, 5));
@@ -148,6 +147,126 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
         stmGeneratorPanel.add(Box.createVerticalStrut(10));
         stmGeneratorPanel.add(queuePanel);
+
+        JPanel settingsPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints settingsGBC = new GridBagConstraints();
+        settingsGBC.insets = new Insets(5, 5, 5, 5);
+        settingsGBC.fill = GridBagConstraints.HORIZONTAL;
+
+        settingsGBC.gridx = 0;
+        settingsGBC.gridy = 0;
+        settingsPanel.add(new JLabel("Default DSP Folder:"), settingsGBC);
+
+        defaultDSPFolderLabel = new JLabel(defaultSavedDSPFolder != null ? defaultSavedDSPFolder.getAbsolutePath() : "None");
+        settingsGBC.gridx = 1;
+        settingsPanel.add(defaultDSPFolderLabel, settingsGBC);
+
+        JButton chooseDefaultDSPButton = new JButton("Change");
+        chooseDefaultDSPButton.addActionListener(e -> chooseDefaultDSPFolder());
+        settingsGBC.gridx = 2;
+        settingsPanel.add(chooseDefaultDSPButton, settingsGBC);
+
+        JButton resetGeneratorSettingsButton = new JButton("Reset Generator Settings");
+        resetGeneratorSettingsButton.addActionListener(e -> resetGeneratorSettings());
+        settingsGBC.gridx = 0;
+        settingsGBC.gridy = 1;
+        settingsGBC.gridwidth = 3;
+        settingsPanel.add(resetGeneratorSettingsButton, settingsGBC);
+
+        tabbedPane.addTab("STM Generator", stmGeneratorPanel);
+        tabbedPane.addTab("Settings", settingsPanel);
+
+        setLayout(new BorderLayout());
+        add(tabbedPane, BorderLayout.CENTER);
+    }
+
+    private void initSettingsFile() {
+        File settingsFile = new File("settings.txt");
+        PrintWriter outputStream;
+        if (!settingsFile.exists()) {
+            try {
+                outputStream = new PrintWriter(new FileOutputStream(settingsFile));
+            }
+            catch (FileNotFoundException f) {
+                return;
+            }
+
+            outputStream.println("defaultSavedDSPFolder:None");
+            outputStream.close();
+        }
+    }
+
+    private void loadSettingsFile() {
+        File settingsFile = new File("settings.txt");
+        try (Scanner inputStream = new Scanner(new FileInputStream(settingsFile))) {
+            while (inputStream.hasNextLine()) {
+                String line = inputStream.nextLine();
+                String[] parts = line.split(":", 2);
+                if (parts.length < 2) continue;
+                String key = parts[0];
+                String value = parts[1];
+
+                if (key.equals("defaultSavedDSPFolder")) {
+                    if (!value.equals("None")) defaultSavedDSPFolder = new File(value);
+                }
+            }
+
+            if (defaultSavedDSPFolder != null && defaultSavedDSPFolder.exists()) {
+                savedDSPFolder = defaultSavedDSPFolder;
+            }
+
+        } catch (FileNotFoundException e) {
+            return;
+        }
+    }
+
+    private void chooseDefaultDSPFolder() {
+        JFileChooser defaultDSPFolderChooser = new JFileChooser();
+        defaultDSPFolderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        defaultDSPFolderChooser.setDialogTitle("Select Default DSP Folder");
+        defaultDSPFolderChooser.setAcceptAllFileFilterUsed(false);
+        int result = defaultDSPFolderChooser.showOpenDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            defaultSavedDSPFolder = defaultDSPFolderChooser.getSelectedFile();
+            defaultDSPFolderLabel.setText(defaultSavedDSPFolder.getAbsolutePath());
+            savedDSPFolder = defaultSavedDSPFolder;
+            saveSettingsToFile();
+        }
+    }
+
+    private void saveSettingsToFile() {
+        try (PrintWriter writer = new PrintWriter(new FileOutputStream("settings.txt"))) {
+            writer.println("defaultSavedDSPFolder:" + (defaultSavedDSPFolder != null ? defaultSavedDSPFolder.getAbsolutePath() : "None"));
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to save settings: " + e.getMessage());
+        }
+    }
+
+    private void resetGeneratorSettings() {
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to reset the generator settings?",
+                "Confirm Reset Settings",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        defaultSavedDSPFolder = null;
+
+        if (defaultDSPFolderLabel != null) {
+            defaultDSPFolderLabel.setText("None");
+        }
+
+        try (PrintWriter writer = new PrintWriter(new FileOutputStream("settings.txt"))) {
+            writer.println("defaultSavedDSPFolder:None");
+            JOptionPane.showMessageDialog(this, "Generator has been reset.");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to reset generator: " + e.getMessage());
+        }
     }
 
     private void updateSongList() {
