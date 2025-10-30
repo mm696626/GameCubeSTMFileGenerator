@@ -1,6 +1,7 @@
 package ui;
 
 import constants.STMFileNames;
+import io.NonLoopingSTMHeaderFixer;
 import io.STMGenerator;
 import io.STMHeaderLoopChecker;
 import uihelpers.DSPPair;
@@ -728,7 +729,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             File stmFile = stmFileChooser.getSelectedFile();
 
-            boolean successful = STMGenerator.fixNonLoopingSTMHeader(stmFile);
+            boolean successful = NonLoopingSTMHeaderFixer.fixNonLoopingSTMHeader(stmFile);
 
             if (successful) {
                 JOptionPane.showMessageDialog(null, "STM header fixed successfully!");
@@ -767,7 +768,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             for (File stmFile : stmFiles) {
                 try {
-                    STMGenerator.fixNonLoopingSTMHeader(stmFile);
+                    NonLoopingSTMHeaderFixer.fixNonLoopingSTMHeader(stmFile);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     JOptionPane.showMessageDialog(this, "Error processing file: " + stmFile.getName(), "Error", JOptionPane.ERROR_MESSAGE);

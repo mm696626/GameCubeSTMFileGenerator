@@ -152,39 +152,6 @@ public class STMGenerator {
         }
     }
 
-    public static boolean fixNonLoopingSTMHeader(File stmFile) {
-        try (RandomAccessFile stmRaf = new RandomAccessFile(stmFile, "rw")) {
-            stmRaf.seek(0x0C);
-
-            stmRaf.write(0xFF);
-            stmRaf.write(0xFF);
-            stmRaf.write(0xFF);
-            stmRaf.write(0xFF);
-
-            stmRaf.seek(0x18);
-
-            stmRaf.write(0x00);
-            stmRaf.write(0x00);
-            stmRaf.write(0x00);
-            stmRaf.write(0x00);
-
-            stmRaf.seek(0x1C);
-
-            stmRaf.write(0x00);
-            stmRaf.write(0x00);
-            stmRaf.write(0x00);
-            stmRaf.write(0x00);
-
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
-            return false;
-        }
-    }
-
-
     private static void logSongReplacement(String songFileName, File leftChannel, File rightChannel, String selectedGame) {
         File songReplacementsFolder = new File("song_replacements");
         if (!songReplacementsFolder.exists()) {
