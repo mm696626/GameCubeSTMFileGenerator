@@ -693,10 +693,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             File outputSTMFile = new File(outputDir, selectedSong);
 
-            if (outputSTMFile.exists()) {
-                outputSTMFile.delete();
-            }
-
             boolean generatedSuccessfully = STMGenerator.generateSTM(leftChannelFile, rightChannelFile, outputSTMFile, selectedSong, selectedGame);
 
             if (generatedSuccessfully) {
@@ -952,10 +948,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
                 File outputSTMFile = new File(outputDir, songFileName);
 
-                if (outputSTMFile.exists()) {
-                    outputSTMFile.delete();
-                }
-
                 STMGenerator.generateSTM(chosenSongPair.getLeft(), chosenSongPair.getRight(), outputSTMFile, songFileName, selectedGame);
             }
 
@@ -1026,10 +1018,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
                 String selectedSong = generateJob.getSongFileName();
                 File outputSTMFile = new File(outputDir, selectedSong);
-
-                if (outputSTMFile.exists()) {
-                    outputSTMFile.delete();
-                }
 
                 boolean generatedSuccessfully = STMGenerator.generateSTM(leftDSP, rightDSP, outputSTMFile, selectedSong, selectedGame);
 

@@ -17,6 +17,10 @@ public class STMGenerator {
             return false;
         }
 
+        if (outputSTMFile.exists()) {
+            outputSTMFile.delete();
+        }
+
         try (RandomAccessFile stmRaf = new RandomAccessFile(outputSTMFile, "rw")) {
 
             //version number (always 2)
