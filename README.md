@@ -1,7 +1,7 @@
 # GameCubeSTMFileGenerator
 
 ### GameCube STM File Generator
-* A tool allows you to generate STM files (the music files used in Paper Mario: The Thousand-Year Door, Fire Emblem: Path of Radiance, and Cubivore)
+* A tool allows you to generate STM files (the music files used in Paper Mario: The Thousand-Year Door, Fire Emblem: Path of Radiance, and Cubivore: Survival of the Fittest)
 
 ### Music Notes
 * Audio must be in DSP format split into two channels
@@ -18,7 +18,7 @@
   * https://katiefrogs.github.io/vgmstream-web/
 
 ### Mono STM Files
-* Cubivore has none
+* Cubivore: Survival of the Fittest has none
 * Fire Emblem: Path of Radiance
   * gcfe_bgm_evt_mist2_32k.stm
 * Paper Mario: The Thousand-Year Door
@@ -50,9 +50,9 @@
 * The Rest of the STM
   * Left Channel DSP Header
   * Right Channel DSP Header (fill with 0's if mono)
-  * Left channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing)
+  * Left Channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing)
   * 0x20 bytes of padding (used for interleaving) (still there if mono)
-  * Right channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing) (only write if stereo)
+  * Right Channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing) (only write if stereo)
   * 0x8000 bytes of 00 padding at the EOF
 
 ### Special Thanks/Credits
