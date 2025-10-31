@@ -226,6 +226,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             }
 
             outputStream.println("defaultSavedDSPFolder:None");
+            outputStream.println("defaultOutputFolder:None");
             outputStream.close();
         }
     }
@@ -318,11 +319,19 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             defaultDSPFolderLabel.setText("None");
         }
 
+        defaultOutputFolder = null;
+
+        if (defaultOutputFolderLabel != null) {
+            defaultOutputFolderLabel.setText("None");
+        }
+
         try (PrintWriter writer = new PrintWriter(new FileOutputStream("settings.txt"))) {
             writer.println("defaultSavedDSPFolder:None");
-            JOptionPane.showMessageDialog(this, "Generator has been reset.");
+            writer.println("defaultOutputFolder:None");
+
+            JOptionPane.showMessageDialog(this, "Generator settings have been reset.");
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Failed to reset generator: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Failed to reset generator settings: " + e.getMessage());
         }
     }
 
