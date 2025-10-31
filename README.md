@@ -11,10 +11,10 @@
 ### Music Replacement Notes
 * If you are using LoopingAudioConverter, do edits like sample rate and volume to a BRSTM before converting to DSP
   * If you don't, it will mess up the loop point to the point the game would crash if the STM is loaded (the tool will actually check that and stop the output STM from being created)
-* For nonlooping jingles and such or if your looping song still doesn't work, put your sound into an MP3 or WAV and use LoopingAudioConverter to make it a start to end looping DSP
+* For nonlooping jingles and such, put your sound into an MP3 or WAV and use LoopingAudioConverter to make it a start to end looping DSP
   * Be sure to press the Fix Nonlooping STM Header button before using your STM in game
   * If you don't do this hacky workaround with nonlooping audio, the game will also crash
-    * I have no idea why this happens
+    * I have no idea why this happens (this also happens for looping songs sometimes)
 * To ensure your STM will work in game, open it with vgmstream and see if it loads
   * https://katiefrogs.github.io/vgmstream-web/
 
