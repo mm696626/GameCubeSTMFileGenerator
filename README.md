@@ -31,6 +31,7 @@
   * stg_rsh_a1_32k.stm
   * stg_rsh_b1_32k.stm
 * There is support to write such files if the game crashes if they're stereo 
+  * The game doesn't crash, but it's neat anyway
 
 ### STM Format Documentation
 * STM Header
