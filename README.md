@@ -32,6 +32,8 @@
   * stg_rsh_b1_32k.stm
 * There is support to write such files if the game crashes if they're stereo 
   * The game doesn't crash, but it's neat anyway
+  * Of course, stereo STMs are the most common format, but it's an option with the Generate Mono STM button
+    * Everything other generation option uses stereo
 
 ### STM Format Documentation
 * STM Header

@@ -95,7 +95,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         pickRightChannel.addActionListener(this);
         rightChannelLabel = new JLabel("No file selected");
 
-        generateSTM = new JButton("Generate Stereo STM");
+        generateSTM = new JButton("Generate STM");
         generateSTM.addActionListener(this);
 
         fixNonLoopingSTMHeader = new JButton("Fix Nonlooping STM Header");
