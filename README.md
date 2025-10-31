@@ -30,6 +30,7 @@
   * ff_mail_chakusin3_32k.stm
   * stg_rsh_a1_32k.stm
   * stg_rsh_b1_32k.stm
+* There is support to write such files if the game crashes if they're stereo 
 
 ### STM Format Documentation
 * STM Header
