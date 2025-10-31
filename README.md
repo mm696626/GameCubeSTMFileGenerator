@@ -2,6 +2,7 @@
 
 ### GameCube STM File Generator
 * A tool allows you to generate STM files (the music files used in Cubivore: Survival of the Fittest, Fire Emblem: Path of Radiance, and Paper Mario: The Thousand-Year Door)
+* All of these games were developed by Intelligent Systems. If there are any more games this format is used in, simply rename the file to whatever the file name is
 
 ### Music Replacement Notes
 * Audio must be in DSP format split into two channels
