@@ -1,14 +1,12 @@
 # GameCubeSTMFileGenerator
 
 ### GameCube STM File Generator
-* A tool allows you to generate STM files (the music files used in Paper Mario: The Thousand-Year Door, Fire Emblem: Path of Radiance, and Cubivore: Survival of the Fittest)
+* A tool allows you to generate STM files (the music files used in Cubivore: Survival of the Fittest, Fire Emblem: Path of Radiance, and Paper Mario: The Thousand-Year Door)
 
-### Music Notes
+### Music Replacement Notes
 * Audio must be in DSP format split into two channels
 * This tool will attempt to auto select the other track of your song, so name it either with the same file name appended with _L and _R or (channel 0) and (channel 1)
     * Example: mario_L.dsp and mario_R.dsp or luigi (channel 0).dsp and luigi (channel 1).dsp
-
-### Music Replacement Notes
 * If you are using LoopingAudioConverter, do edits like sample rate to a BRSTM before converting to DSP
   * If you don't, it will mess up the loop point to the point the game would crash if the STM is loaded (the tool will actually check that and stop the output STM from being created)
   * You can get around this by putting your song into an MP3 or WAV first using LoopingAudioConverter or vgmstream and then creating the DSPs that way
@@ -36,24 +34,24 @@
 
 ### STM Format Documentation
 * STM Header
-  * 2 bytes - Version Number? (always 512)
-  * 2 bytes - Sample Rate
-  * 4 bytes - Channel Count (most of the time it's 2) (if mono, then 1)
-  * 4 bytes - Audio Channel Data Length (it's the audio data + whatever rounding gets you to the next 0x20 boundary. If the file size is divisible, then keep it as is)
-  * 4 bytes - STM Loop Start (must be the start loop in the DSP header - 2 / 2) (the game will crash if the lowest byte isn't 0x02, 0x42, 0x82, or 0xC2 since the loop in the STM header must be exactly divisible by 0x20) (All 4 bytes are FF if non looping)
-  * 4 bytes - Audio Channel Data Length (same as above)
-  * 4 bytes - Audio Channel Data Length (same as above)
-  * 4 bytes - STM Loop Start (same as above) (All 4 bytes are 00 if non looping)
-  * 4 bytes - STM Loop Start (same as above) (All 4 bytes are 00 if non looping)
+  * 0x02 bytes - Version Number? (always 512)
+  * 0x02 bytes - Sample Rate
+  * 0x04 bytes - Channel Count (most of the time it's 2) (if mono, then 1)
+  * 0x04 bytes - Audio Channel Data Length (it's the audio data + whatever rounding gets you to the next 0x20 boundary. If the file size is divisible, then keep it as is)
+  * 0x04 bytes - STM Loop Start (must be the start loop in the DSP header - 2 / 2) (the game will crash if the lowest byte isn't 0x02, 0x42, 0x82, or 0xC2 since the loop in the STM header must be exactly divisible by 0x20) (All 4 bytes are FF if non looping)
+  * 0x04 bytes - Audio Channel Data Length (same as above)
+  * 0x04 bytes - Audio Channel Data Length (same as above)
+  * 0x04 bytes - STM Loop Start (same as above) (All 4 bytes are 00 if non looping)
+  * 0x04 bytes - STM Loop Start (same as above) (All 4 bytes are 00 if non looping)
   * 0x20 bytes of 00 padding
 
 * The Rest of the STM
-  * Left Channel DSP Header
-  * Right Channel DSP Header (fill with 0's if mono)
+  * Left Channel DSP Header (0x60 bytes)
+  * Right Channel DSP Header (fill with 0's if mono) (0x60 bytes)
   * Left Channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing)
   * 0x20 bytes of padding (used for interleaving) (still there if mono)
   * Right Channel Audio Data (pad it to the next 0x20 boundary. If already 0x20 aligned, then nothing) (only write if stereo)
-  * 0x8000 bytes of 00 padding at the EOF
+  * 0x8000 bytes of 00 padding at the end of the file
 
 ### Special Thanks/Credits
 * This documentation on the STM header and DSP format helped a lot too
