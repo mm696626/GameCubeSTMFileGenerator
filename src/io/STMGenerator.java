@@ -103,7 +103,7 @@ public class STMGenerator {
     }
 
     private static void writeSTMHeader(File leftChannel, RandomAccessFile stmRaf, int audioChannelWithPaddingLength) throws IOException {
-        //version number (always 2)
+        //version number (always 512)
         stmRaf.write(0x02);
         stmRaf.write(0x00);
 

@@ -33,7 +33,7 @@
 
 ### STM Format Documentation
 * STM Header
-  * 2 bytes - Version Number? (always 2)
+  * 2 bytes - Version Number? (always 512)
   * 2 bytes - Sample Rate
   * 4 bytes - Channel Count (mostly 2) (rarely mono)
   * 4 bytes - Audio Channel Data Length (it's the audio data + whatever rounding gets you to the next 0x20 boundary. If the file size is divisible, then keep it as is)
