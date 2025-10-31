@@ -14,8 +14,7 @@
 * For nonlooping jingles and such, put your sound into an MP3 or WAV and use LoopingAudioConverter to make it a start to end looping DSP
   * Be sure to press the Fix Nonlooping STM Header button before using your STM in game
   * If you don't do this hacky workaround with nonlooping audio, the game will also crash
-    * I have no idea why this happens (this also happens for looping songs sometimes)
-* To ensure your STM will work in game, open it with vgmstream and see if it loads
+* To ensure your STM will work in game, open it with vgmstream and see if it loads (if it doesn't, try it in game to see since I've had cases where it didn't load there, but worked perfectly in game. If that doesn't work, then try again)
   * https://katiefrogs.github.io/vgmstream-web/
 
 ### Mono STM Files
