@@ -61,7 +61,7 @@ public class STMGenerator {
             //write last 0x8000 bytes of padding all STM files have
             writePaddingBytes(stmRaf, 0x8000);
 
-            logSongReplacement(songFileName, leftChannel, rightChannel, selectedGame);
+            logSongReplacement(songFileName, leftChannel, rightChannel, outputSTMFile, selectedGame);
             return true;
         }
         catch (Exception e) {
@@ -185,13 +185,18 @@ public class STMGenerator {
         }
     }
 
-    private static void logSongReplacement(String songFileName, File leftChannel, File rightChannel, String selectedGame) {
+    private static void logSongReplacement(String songFileName, File leftChannel, File rightChannel, File outputSTMFile, String selectedGame) {
         File songReplacementsFolder = new File("song_replacements");
         if (!songReplacementsFolder.exists()) {
             songReplacementsFolder.mkdirs();
         }
 
-        File logFile = new File("song_replacements", selectedGame + ".txt");
+        File logFile;
+
+        File outputFolder = outputSTMFile.getParentFile();
+        String hash = Integer.toHexString(outputFolder.hashCode());
+        String baseFileName = selectedGame + "_" + hash;
+        logFile = new File("song_replacements", baseFileName + ".txt");
 
         Map<String, String> songMap = new TreeMap<>();
 
