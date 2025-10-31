@@ -9,8 +9,9 @@
     * Example: mario_L.dsp and mario_R.dsp or luigi (channel 0).dsp and luigi (channel 1).dsp
 
 ### Music Replacement Notes
-* If you are using LoopingAudioConverter, do edits like sample rate and volume to a BRSTM before converting to DSP
+* If you are using LoopingAudioConverter, do edits like sample rate to a BRSTM before converting to DSP
   * If you don't, it will mess up the loop point to the point the game would crash if the STM is loaded (the tool will actually check that and stop the output STM from being created)
+  * You can get around this by putting your song into an MP3 or WAV first using LoopingAudioConverter or vgmstream and then creating the DSPs that way
 * For nonlooping jingles and such, put your sound into an MP3 or WAV and use LoopingAudioConverter to make it a start to end looping DSP
   * Be sure to press the Fix Nonlooping STM Header button before using your STM in game
   * If you don't do this hacky workaround with nonlooping audio, the game will also crash
