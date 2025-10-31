@@ -68,7 +68,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         gbc.gridy = 0;
         gameSongPanel.add(new JLabel("Game:"), gbc);
 
-        gameSelector = new JComboBox<>(new String[]{"Paper Mario: The Thousand-Year Door", "Fire Emblem: Path of Radiance", "Cubivore"});
+        gameSelector = new JComboBox<>(new String[]{"Cubivore: Survival of the Fittest", "Fire Emblem: Path of Radiance", "Paper Mario: The Thousand-Year Door"});
         gameSelector.addActionListener(e -> updateSongList());
         gbc.gridx = 1;
         gameSongPanel.add(gameSelector, gbc);
@@ -77,7 +77,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         gbc.gridy = 1;
         gameSongPanel.add(new JLabel("Song File Name:"), gbc);
 
-        songSelector = new JComboBox<>(STMFileNames.PAPER_MARIO_TTYD_FILE_NAMES);
+        songSelector = new JComboBox<>(STMFileNames.CUBIVORE_FILE_NAMES);
         gbc.gridx = 1;
         gameSongPanel.add(songSelector, gbc);
 
@@ -349,7 +349,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         if (selectedGame == null) return null;
 
         switch (selectedGame) {
-            case "Cubivore":
+            case "Cubivore: Survival of the Fittest":
                 return STMFileNames.CUBIVORE_FILE_NAMES;
             case "Fire Emblem: Path of Radiance":
                 return STMFileNames.FIRE_EMBLEM_POR_FILE_NAMES;
