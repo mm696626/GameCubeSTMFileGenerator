@@ -3,7 +3,6 @@ package ui;
 import constants.STMFileNames;
 import io.NonLoopingSTMHeaderFixer;
 import io.STMGenerator;
-import io.STMHeaderLoopChecker;
 import uihelpers.DSPPair;
 import uihelpers.GenerateJob;
 
@@ -921,13 +920,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             if (dspFolderForRandomization != null) {
                 dspPairs = DSPPair.detectDSPPairs(dspFolderForRandomization);
-            }
-
-            for (int i = dspPairs.size() - 1; i >= 0; i--) {
-                DSPPair pair = dspPairs.get(i);
-                if (!STMHeaderLoopChecker.isValidLoopStart(pair.getLeft()) || !STMHeaderLoopChecker.isValidLoopStart(pair.getRight())) {
-                    dspPairs.remove(i);
-                }
             }
 
             if (dspPairs.isEmpty()) {

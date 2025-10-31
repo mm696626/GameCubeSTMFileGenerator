@@ -1,5 +1,7 @@
 package uihelpers;
 
+import io.STMHeaderLoopChecker;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,20 +38,29 @@ public class DSPPair {
 
         for (File f : files) {
             String name = f.getName();
+            DSPPair pair = null;
+
             if (name.endsWith("_L.dsp")) {
                 String rightName = name.replace("_L.dsp", "_R.dsp");
                 if (fileMap.containsKey(rightName)) {
-                    pairs.add(new DSPPair(f, fileMap.get(rightName), name.replace("_L.dsp", "")));
+                    pair = new DSPPair(f, fileMap.get(rightName), name.replace("_L.dsp", ""));
                 }
             } else if (name.endsWith("_l.dsp")) {
                 String rightName = name.replace("_l.dsp", "_r.dsp");
                 if (fileMap.containsKey(rightName)) {
-                    pairs.add(new DSPPair(f, fileMap.get(rightName), name.replace("_l.dsp", "")));
+                    pair = new DSPPair(f, fileMap.get(rightName), name.replace("_l.dsp", ""));
                 }
             } else if (name.endsWith("(channel 0).dsp")) {
                 String rightName = name.replace("(channel 0).dsp", "(channel 1).dsp");
                 if (fileMap.containsKey(rightName)) {
-                    pairs.add(new DSPPair(f, fileMap.get(rightName), name.replace(" (channel 0).dsp", "")));
+                    pair = new DSPPair(f, fileMap.get(rightName), name.replace(" (channel 0).dsp", ""));
+                }
+            }
+
+            if (pair != null) {
+                if (STMHeaderLoopChecker.isValidLoopStart(pair.getLeft()) &&
+                        STMHeaderLoopChecker.isValidLoopStart(pair.getRight())) {
+                    pairs.add(pair);
                 }
             }
         }
