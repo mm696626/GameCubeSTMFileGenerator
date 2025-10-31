@@ -28,6 +28,8 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private File defaultSavedDSPFolder;
     private File defaultOutputFolder;
 
+    private String defaultGame;
+
     private JLabel leftChannelLabel;
     private JLabel rightChannelLabel;
     private JLabel defaultDSPFolderLabel;
@@ -80,6 +82,11 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         songSelector = new JComboBox<>(STMFileNames.CUBIVORE_FILE_NAMES);
         gbc.gridx = 1;
         gameSongPanel.add(songSelector, gbc);
+
+        if (defaultGame != null) {
+            gameSelector.setSelectedItem(defaultGame);
+            updateSongList();
+        }
 
         JPanel stmPanel = new JPanel(new GridBagLayout());
         stmPanel.setBorder(BorderFactory.createTitledBorder("DSP Selection/STM Generation"));
@@ -200,10 +207,41 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         settingsGBC.gridx = 2;
         settingsPanel.add(chooseDefaultOutputFolderButton, settingsGBC);
 
+        settingsGBC.gridx = 0;
+        settingsGBC.gridy = 2;
+        settingsPanel.add(new JLabel("Default Game:"), settingsGBC);
+
+        JComboBox<String> defaultGameSelector = new JComboBox<>(
+                new String[]{"Cubivore: Survival of the Fittest", "Fire Emblem: Path of Radiance", "Paper Mario: The Thousand-Year Door"}
+        );
+        if (defaultGame != null) {
+            defaultGameSelector.setSelectedItem(defaultGame);
+        }
+        settingsGBC.gridx = 1;
+        settingsPanel.add(defaultGameSelector, settingsGBC);
+
+        JButton saveDefaultGameButton = new JButton("Set Default Game");
+        saveDefaultGameButton.addActionListener(e -> {
+            defaultGame = (String) defaultGameSelector.getSelectedItem();
+            saveSettingsToFile();
+
+            if (gameSelector != null) {
+                gameSelector.setSelectedItem(defaultGame);
+                updateSongList();
+
+                if (songSelector != null && songSelector.getItemCount() > 0) {
+                    songSelector.setSelectedIndex(0);
+                }
+            }
+        });
+        settingsGBC.gridx = 2;
+        settingsPanel.add(saveDefaultGameButton, settingsGBC);
+
+
         JButton resetGeneratorSettingsButton = new JButton("Reset Generator Settings");
         resetGeneratorSettingsButton.addActionListener(e -> resetGeneratorSettings());
         settingsGBC.gridx = 0;
-        settingsGBC.gridy = 2;
+        settingsGBC.gridy = 3;
         settingsGBC.gridwidth = 3;
         settingsPanel.add(resetGeneratorSettingsButton, settingsGBC);
 
@@ -227,6 +265,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             outputStream.println("defaultSavedDSPFolder:None");
             outputStream.println("defaultOutputFolder:None");
+            outputStream.println("defaultGame:None");
             outputStream.close();
         }
     }
@@ -247,6 +286,10 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 if (key.equals("defaultOutputFolder")) {
                     if (!value.equals("None")) defaultOutputFolder = new File(value);
                 }
+
+                if (key.equals("defaultGame")) {
+                    if (!value.equals("None")) defaultGame = value;
+                }
             }
 
             if (defaultSavedDSPFolder != null && defaultSavedDSPFolder.exists()) {
@@ -255,6 +298,11 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             if (defaultOutputFolder != null && defaultOutputFolder.exists()) {
                 savedOutputFolder = defaultOutputFolder;
+            }
+
+            if (defaultGame != null) {
+                gameSelector = new JComboBox<>(new String[]{"Cubivore: Survival of the Fittest", "Fire Emblem: Path of Radiance", "Paper Mario: The Thousand-Year Door"});
+                gameSelector.setSelectedItem(defaultGame);
             }
 
         } catch (FileNotFoundException e) {
@@ -296,6 +344,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         try (PrintWriter writer = new PrintWriter(new FileOutputStream("settings.txt"))) {
             writer.println("defaultSavedDSPFolder:" + (defaultSavedDSPFolder != null ? defaultSavedDSPFolder.getAbsolutePath() : "None"));
             writer.println("defaultOutputFolder:" + (defaultOutputFolder != null ? defaultOutputFolder.getAbsolutePath() : "None"));
+            writer.println("defaultGame:" + (defaultGame != null ? defaultGame : "None"));
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to save settings: " + e.getMessage());
         }
@@ -325,9 +374,12 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             defaultOutputFolderLabel.setText("None");
         }
 
+        defaultGame = null;
+
         try (PrintWriter writer = new PrintWriter(new FileOutputStream("settings.txt"))) {
             writer.println("defaultSavedDSPFolder:None");
             writer.println("defaultOutputFolder:None");
+            writer.println("defaultGame:None");
 
             JOptionPane.showMessageDialog(this, "Generator settings have been reset.");
         } catch (IOException e) {
