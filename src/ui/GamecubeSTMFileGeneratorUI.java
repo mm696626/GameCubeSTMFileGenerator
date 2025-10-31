@@ -708,6 +708,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
         if (e.getSource() == generateMonoSTM) {
             JFileChooser dspFileChooser = new JFileChooser();
+            dspFileChooser.setDialogTitle("Select DSP File");
             dspFileChooser.setAcceptAllFileFilterUsed(false);
             FileNameExtensionFilter dspFilter = new FileNameExtensionFilter("DSP Files", "dsp");
             dspFileChooser.setFileFilter(dspFilter);
