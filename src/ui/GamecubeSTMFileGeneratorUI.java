@@ -77,7 +77,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
         gbc.gridx = 0;
         gbc.gridy = 1;
-        gameSongPanel.add(new JLabel("Song File Name:"), gbc);
+        gameSongPanel.add(new JLabel("Song:"), gbc);
 
         songSelector = new JComboBox<>(initializeSongArray());
         gbc.gridx = 1;
@@ -87,6 +87,57 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             gameSelector.setSelectedItem(defaultGame);
             updateSongList();
         }
+
+        JLabel filterLabel = new JLabel("Search Songs:");
+        JTextField songSearchField = new JTextField();
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gameSongPanel.add(filterLabel, gbc);
+
+        gbc.gridx = 1;
+        gameSongPanel.add(songSearchField, gbc);
+
+        songSearchField.getDocument().addDocumentListener(new DocumentListener() {
+            private void filterSongs() {
+                String filterText = songSearchField.getText().toLowerCase();
+                String[] songNameArray = getSongNameArrayForSelectedGame();
+
+                if (songNameArray == null) return;
+
+                String currentSelection = (String) songSelector.getSelectedItem();
+
+                ArrayList<String> filtered = new ArrayList<>();
+                for (String song : songNameArray) {
+                    if (song.toLowerCase().contains(filterText)) {
+                        filtered.add(song);
+                    }
+                }
+
+                Collections.sort(filtered);
+                DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(filtered.toArray(new String[0]));
+                songSelector.setModel(model);
+
+                if (currentSelection != null && filtered.contains(currentSelection)) {
+                    songSelector.setSelectedItem(currentSelection);
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                filterSongs();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                filterSongs();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                filterSongs();
+            }
+        });
 
         JPanel stmPanel = new JPanel(new GridBagLayout());
         stmPanel.setBorder(BorderFactory.createTitledBorder("DSP Selection/STM Generation"));
@@ -388,7 +439,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     }
 
     private void updateSongList() {
-        String[] songNameArray = getSongArrayForSelectedGame();
+        String[] songNameArray = getSongNameArrayForSelectedGame();
 
         if (songSelector == null) {
             songSelector = new JComboBox<>();
@@ -416,7 +467,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         return initialSongArray;
     }
 
-    private String[] getSongArrayForSelectedGame() {
+    private String[] getSongNameArrayForSelectedGame() {
         String selectedGame = (String) gameSelector.getSelectedItem();
         if (selectedGame == null) return null;
 
@@ -998,15 +1049,20 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
 
-            String[] songFileNames = getSongArrayForSelectedGame();
+            String[] songNames = getSongNameArrayForSelectedGame();
 
-            if (songFileNames == null) {
+            if (songNames == null) {
                 return;
             }
+
+            Arrays.sort(songNames);
 
             JPanel mainPanel = new JPanel(new BorderLayout());
             JPanel topPanel = new JPanel(new BorderLayout());
 
+            JTextField searchField = new JTextField();
+            searchField.setToolTipText("Search songs...");
+            topPanel.add(searchField, BorderLayout.NORTH);
 
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
             JButton selectAllButton = new JButton("Select All");
@@ -1018,10 +1074,10 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             JPanel checkboxPanel = new JPanel();
             checkboxPanel.setLayout(new BoxLayout(checkboxPanel, BoxLayout.Y_AXIS));
 
-            JCheckBox[] songCheckboxes = new JCheckBox[songFileNames.length];
+            JCheckBox[] songCheckboxes = new JCheckBox[songNames.length];
 
-            for (int i=0; i<songFileNames.length; i++) {
-                songCheckboxes[i] = new JCheckBox(songFileNames[i]);
+            for (int i=0; i<songNames.length; i++) {
+                songCheckboxes[i] = new JCheckBox(songNames[i]);
                 checkboxPanel.add(songCheckboxes[i]);
             }
 
@@ -1030,6 +1086,35 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             mainPanel.add(topPanel, BorderLayout.NORTH);
             mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+            searchField.getDocument().addDocumentListener(new DocumentListener() {
+                private void filter() {
+                    String query = searchField.getText().trim().toLowerCase();
+
+                    checkboxPanel.removeAll();
+
+                    for (int i = 0; i < songNames.length; i++) {
+                        String songName = songNames[i].toLowerCase();
+                        JCheckBox cb = songCheckboxes[i];
+
+                        if (query.isEmpty() || songName.contains(query)) {
+                            checkboxPanel.add(cb);
+                        }
+                    }
+
+                    checkboxPanel.revalidate();
+                    checkboxPanel.repaint();
+                }
+
+                @Override
+                public void insertUpdate(DocumentEvent e) { filter(); }
+
+                @Override
+                public void removeUpdate(DocumentEvent e) { filter(); }
+
+                @Override
+                public void changedUpdate(DocumentEvent e) { filter(); }
+            });
 
             selectAllButton.addActionListener(ev -> {
                 for (JCheckBox cb : songCheckboxes) {
@@ -1099,11 +1184,11 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 outputDir = folderChooser.getSelectedFile();
             }
 
-            int songFileNameIndex = 0;
-            for (String songFileName : songFileNames) {
+            int songIndex = 0;
+            for (String songName : songNames) {
 
-                JCheckBox songRandomized = songCheckboxes[songFileNameIndex];
-                songFileNameIndex++;
+                JCheckBox songRandomized = songCheckboxes[songIndex];
+                songIndex++;
 
                 if (songRandomized == null || !songRandomized.isSelected()) {
                     continue;
@@ -1123,7 +1208,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                     chosenSongPair = dspPairPool.get(randomIndex);
                 }
 
-                String outputSTMFileName = getFileNameFromSong(selectedGame, songFileName);
+                String outputSTMFileName = getFileNameFromSong(selectedGame, songName);
 
                 if (outputSTMFileName == null) {
                     return;
@@ -1131,7 +1216,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
                 File outputSTMFile = new File(outputDir, outputSTMFileName);
 
-                STMGenerator.generateSTM(chosenSongPair.getLeft(), chosenSongPair.getRight(), outputSTMFile, songFileName, selectedGame);
+                STMGenerator.generateSTM(chosenSongPair.getLeft(), chosenSongPair.getRight(), outputSTMFile, songName, selectedGame);
             }
 
             JOptionPane.showMessageDialog(this, "Randomization completed.");
