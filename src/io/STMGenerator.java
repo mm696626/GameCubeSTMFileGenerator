@@ -10,7 +10,7 @@ import java.util.TreeMap;
 
 public class STMGenerator {
 
-    public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile, String songFileName, String selectedGame) {
+    public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile, String songFileName, String selectedGame, boolean deleteDSPAfterGenerate) {
 
         boolean isMono = rightChannel == null;
 
@@ -62,6 +62,15 @@ public class STMGenerator {
             writePaddingBytes(stmRaf, 0x8000);
 
             logSongReplacement(songFileName, leftChannel, rightChannel, outputSTMFile, selectedGame);
+
+            if (deleteDSPAfterGenerate) {
+                leftChannel.delete();
+
+                if (!isMono) {
+                    rightChannel.delete();
+                }
+            }
+
             return true;
         }
         catch (Exception e) {

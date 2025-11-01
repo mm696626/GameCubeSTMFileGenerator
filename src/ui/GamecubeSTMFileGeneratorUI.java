@@ -45,6 +45,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private JButton generateMonoSTM;
 
     private JCheckBox autoAddToQueue;
+    private JCheckBox deleteDSPAfterGenerate;
 
 
     public GamecubeSTMFileGeneratorUI() {
@@ -190,8 +191,12 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         stmPanel.add(modifyWithRandomSongs, stmGBC);
 
         autoAddToQueue = new JCheckBox("Automatically Add DSP Pairs from DSP Folder to Queue");
-        stmGBC.gridx = 0; stmGBC.gridy = 3;
+        stmGBC.gridx = 0; stmGBC.gridy = 4;
         stmPanel.add(autoAddToQueue, stmGBC);
+
+        deleteDSPAfterGenerate = new JCheckBox("Delete Source DSPs after Generation");
+        stmGBC.gridx = 1;
+        stmPanel.add(deleteDSPAfterGenerate, stmGBC);
 
         stmGeneratorPanel.add(gameSongPanel);
         stmGeneratorPanel.add(Box.createVerticalStrut(10));
@@ -867,7 +872,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             File outputSTMFile = new File(outputDir, outputSTMFileName);
 
-            boolean generatedSuccessfully = STMGenerator.generateSTM(leftChannelFile, rightChannelFile, outputSTMFile, selectedSong, selectedGame);
+            boolean generatedSuccessfully = STMGenerator.generateSTM(leftChannelFile, rightChannelFile, outputSTMFile, selectedSong, selectedGame, deleteDSPAfterGenerate.isSelected());
 
             if (generatedSuccessfully) {
                 JOptionPane.showMessageDialog(null, "STM file generated successfully!");
@@ -928,7 +933,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
             File outputSTMFile = new File(outputDir, outputSTMFileName);
 
-            boolean generatedSuccessfully = STMGenerator.generateSTM(selectedDSPFile, null, outputSTMFile, selectedSong, selectedGame);
+            boolean generatedSuccessfully = STMGenerator.generateSTM(selectedDSPFile, null, outputSTMFile, selectedSong, selectedGame, deleteDSPAfterGenerate.isSelected());
 
             if (generatedSuccessfully) {
                 JOptionPane.showMessageDialog(null, "STM file generated successfully!");
@@ -1216,7 +1221,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
                 File outputSTMFile = new File(outputDir, outputSTMFileName);
 
-                STMGenerator.generateSTM(chosenSongPair.getLeft(), chosenSongPair.getRight(), outputSTMFile, songName, selectedGame);
+                STMGenerator.generateSTM(chosenSongPair.getLeft(), chosenSongPair.getRight(), outputSTMFile, songName, selectedGame, deleteDSPAfterGenerate.isSelected());
             }
 
             JOptionPane.showMessageDialog(this, "Randomization completed.");
@@ -1293,7 +1298,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
                 File outputSTMFile = new File(outputDir, outputSTMFileName);
 
-                boolean generatedSuccessfully = STMGenerator.generateSTM(leftDSP, rightDSP, outputSTMFile, selectedSong, selectedGame);
+                boolean generatedSuccessfully = STMGenerator.generateSTM(leftDSP, rightDSP, outputSTMFile, selectedSong, selectedGame, deleteDSPAfterGenerate.isSelected());
 
                 if (!generatedSuccessfully) {
                     JOptionPane.showMessageDialog(null, "Something went wrong with the job for " + generateJob.getSongFileName());
