@@ -58,3 +58,9 @@
 * This documentation on the STM header and DSP format helped a lot too
     * https://www.metroid2002.com/retromodding/wiki/DSP_(File_Format)
     * https://hack64.net/wiki/doku.php?id=paper_mario_the_thousand_year_door:soundfolder
+* Big shout out to these sources for helping me identify the song names
+  * https://hack64.net/wiki/doku.php?id=paper_mario_the_thousand_year_door:stm_list
+  * https://www.youtube.com/playlist?list=PLESFnlO3kNnqwJTeHkRuB9Ak10pajrKo-
+  * https://serenesforest.net/music/path-of-radiance-game-rip/
+  * https://fireemblem.fandom.com/wiki/List_of_Music_in_Fire_Emblem:_Path_of_Radiance
+  * https://www.youtube.com/playlist?list=PLRB_l-VPlUGuvp2vDehWYGH9acnZ6qgsQ
