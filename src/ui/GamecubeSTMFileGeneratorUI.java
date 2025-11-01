@@ -294,12 +294,12 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         settingsPanel.add(saveDefaultGameButton, settingsGBC);
 
 
-        JButton resetGeneratorSettingsButton = new JButton("Reset Generator Settings");
-        resetGeneratorSettingsButton.addActionListener(e -> resetGeneratorSettings());
+        JButton resetGeneratorButton = new JButton("Reset Generator");
+        resetGeneratorButton.addActionListener(e -> resetGenerator());
         settingsGBC.gridx = 0;
         settingsGBC.gridy = 3;
         settingsGBC.gridwidth = 3;
-        settingsPanel.add(resetGeneratorSettingsButton, settingsGBC);
+        settingsPanel.add(resetGeneratorButton, settingsGBC);
 
         tabbedPane.addTab("STM Generator", stmGeneratorPanel);
         tabbedPane.addTab("Settings", settingsPanel);
@@ -406,11 +406,11 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         }
     }
 
-    private void resetGeneratorSettings() {
+    private void resetGenerator() {
         int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "Are you sure you want to reset the generator settings?",
-                "Confirm Reset Settings",
+                "Are you sure you want to reset the generator along with the settings?\nThis will reset the generator as if it was never run before.",
+                "Confirm Reset",
                 JOptionPane.YES_NO_OPTION
         );
 
@@ -432,15 +432,35 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
 
         defaultGame = null;
 
+        File songReplacementsFolder = new File("song_replacements");
+
+        if (songReplacementsFolder.exists()) {
+            deleteFolder(songReplacementsFolder);
+        }
+
         try (PrintWriter writer = new PrintWriter(new FileOutputStream("settings.txt"))) {
             writer.println("defaultSavedDSPFolder:None");
             writer.println("defaultOutputFolder:None");
             writer.println("defaultGame:None");
 
-            JOptionPane.showMessageDialog(this, "Generator settings have been reset.");
+            JOptionPane.showMessageDialog(this, "Generator has been reset.");
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Failed to reset generator settings: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Failed to reset generator: " + e.getMessage());
         }
+    }
+
+    public static void deleteFolder(File folder) {
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isDirectory()) {
+                    deleteFolder(f);
+                } else {
+                    f.delete();
+                }
+            }
+        }
+        folder.delete();
     }
 
     private void updateSongList() {
