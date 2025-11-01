@@ -90,7 +90,7 @@ public class STMFileNames {
             new Song("ff_mail_chakusin2_32k.stm", "Mystery E-Mail"),
             new Song("ff_mail_chakusin3_32k.stm", "You've Got Mail!"),
             new Song("ff_pow1_32k.stm", "Power-up Partner"),
-            new Song("ff_r_apr2_32k.stm", "Doopliss Theme (without Intro)"),
+            new Song("ff_r_apr2_32k.stm", "Doopliss Theme"),
             new Song("ff_scs1_32k.stm", "Puzzle Solved!"),
             new Song("ff_slp1_32k.stm", "Goodnight Mario"),
             new Song("ff_spr1_32k.stm", "Enemy Revealed"),
