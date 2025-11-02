@@ -1,6 +1,7 @@
 package ui;
 
 import constants.STMFileNames;
+import io.GetMonoNonloopingSongs;
 import io.NonLoopingSTMHeaderFixer;
 import io.STMGenerator;
 import uihelpers.DSPPair;
@@ -43,6 +44,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private JButton addToQueueButton, removeQueueButton, clearQueueButton, runBatchButton;
     private JButton modifyWithRandomSongs;
     private JButton generateMonoSTM;
+    private JButton getMonoNonLoopingSongs;
 
     private JCheckBox autoAddToQueue;
     private JCheckBox deleteDSPAfterGenerate;
@@ -169,6 +171,9 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         generateMonoSTM = new JButton("Generate Mono STM");
         generateMonoSTM.addActionListener(this);
 
+        getMonoNonLoopingSongs = new JButton("Get Mono/Nonlooping Songs");
+        getMonoNonLoopingSongs.addActionListener(this);
+
         stmGBC.gridx = 0; stmGBC.gridy = 0;
         stmPanel.add(pickLeftChannel, stmGBC);
         stmGBC.gridx = 1;
@@ -183,6 +188,8 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         stmPanel.add(generateSTM, stmGBC);
         stmGBC.gridx = 1;
         stmPanel.add(generateMonoSTM, stmGBC);
+        stmGBC.gridx = 2;
+        stmPanel.add(getMonoNonLoopingSongs, stmGBC);
         stmGBC.gridx = 0; stmGBC.gridy = 3;
         stmPanel.add(fixNonLoopingSTMHeader, stmGBC);
         stmGBC.gridx = 1;
@@ -817,6 +824,30 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         return null;
     }
 
+    private String getSongFromFileName(String selectedGame, String fileName) {
+        Song[] songArray;
+
+        switch (selectedGame) {
+            case "Cubivore: Survival of the Fittest":
+                songArray = STMFileNames.CUBIVORE_FILE_NAMES;
+                break;
+            case "Fire Emblem: Path of Radiance":
+                songArray = STMFileNames.FIRE_EMBLEM_POR_FILE_NAMES;
+                break;
+            default:
+                songArray = STMFileNames.PAPER_MARIO_TTYD_FILE_NAMES;
+                break;
+        }
+
+        for (Song song : songArray) {
+            if (song.getSongFileName().equals(fileName)) {
+                return song.getSongDisplayName();
+            }
+        }
+
+        return null;
+    }
+
     private void addToQueue() {
         String songFileName = (String) songSelector.getSelectedItem();
         if (songFileName == null || leftChannelPath.isEmpty() || rightChannelPath.isEmpty()) {
@@ -863,6 +894,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 return;
             }
 
+            String originalSelectedGame = selectedGame;
             selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
 
             File outputDir;
@@ -884,7 +916,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 outputDir = folderChooser.getSelectedFile();
             }
 
-            String outputSTMFileName = getFileNameFromSong(selectedGame, selectedSong);
+            String outputSTMFileName = getFileNameFromSong(originalSelectedGame, selectedSong);
 
             if (outputSTMFileName == null) {
                 return;
@@ -924,6 +956,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 return;
             }
 
+            String originalSelectedGame = selectedGame;
             selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
 
             File outputDir;
@@ -945,7 +978,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 outputDir = folderChooser.getSelectedFile();
             }
 
-            String outputSTMFileName = getFileNameFromSong(selectedGame, selectedSong);
+            String outputSTMFileName = getFileNameFromSong(originalSelectedGame, selectedSong);
 
             if (outputSTMFileName == null) {
                 return;
@@ -1034,6 +1067,84 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             JOptionPane.showMessageDialog(null, "STM headers fixed successfully!");
         }
 
+        if (e.getSource() == getMonoNonLoopingSongs) {
+            JFileChooser stmFolderChooser = new JFileChooser();
+            stmFolderChooser.setDialogTitle("Select STM Folder");
+            stmFolderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            stmFolderChooser.setAcceptAllFileFilterUsed(false);
+
+            int userSelection = stmFolderChooser.showOpenDialog(this);
+            if (userSelection != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+
+            File stmFolder = stmFolderChooser.getSelectedFile();
+            File[] stmFiles = stmFolder.listFiles((_, name) -> name.toLowerCase().endsWith(".stm"));
+
+            if (stmFiles == null || stmFiles.length == 0) {
+                JOptionPane.showMessageDialog(this, "No STM files found in the selected folder.",
+                        "No Files", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String selectedGame = (String) gameSelector.getSelectedItem();
+            if (selectedGame == null || selectedGame.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please select a game.");
+                return;
+            }
+
+            StringBuilder monoSongs = new StringBuilder();
+            StringBuilder nonLoopingSongs = new StringBuilder();
+
+            for (File stmFile : stmFiles) {
+                try {
+                    boolean isMono = GetMonoNonloopingSongs.isSongMono(stmFile);
+                    boolean isNonLooping = GetMonoNonloopingSongs.isSongNonLooping(stmFile);
+                    String songName = getSongFromFileName(selectedGame, stmFile.getName());
+
+                    if (songName != null) {
+                        if (isMono) {
+                            monoSongs.append(songName).append("\n");
+                        }
+                        if (isNonLooping) {
+                            nonLoopingSongs.append(songName).append("\n");
+                        }
+                    }
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error processing file: " + stmFile.getName(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+            if (!monoSongs.isEmpty() || !nonLoopingSongs.isEmpty()) {
+                StringBuilder report = new StringBuilder();
+
+                if (!monoSongs.isEmpty()) {
+                    report.append("=== Mono Songs ===\n")
+                            .append(monoSongs)
+                            .append("\n");
+                }
+                if (!nonLoopingSongs.isEmpty()) {
+                    report.append("=== Nonlooping Songs ===\n")
+                            .append(nonLoopingSongs)
+                            .append("\n");
+                }
+
+                JTextArea textArea = new JTextArea(report.toString());
+                textArea.setEditable(false);
+                textArea.setLineWrap(true);
+                textArea.setWrapStyleWord(true);
+
+                JScrollPane scrollPane = new JScrollPane(textArea);
+                scrollPane.setPreferredSize(new Dimension(400, 300));
+
+                JOptionPane.showMessageDialog(this, scrollPane,
+                        "Mono / Non-looping Songs", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+
         if (e.getSource() == modifyWithRandomSongs) {
 
             File dspFolderForRandomization;
@@ -1072,6 +1183,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 return;
             }
 
+            String originalSelectedGame = selectedGame;
             selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
 
             String[] songNames = getSongNameArrayForSelectedGame();
@@ -1233,7 +1345,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                     chosenSongPair = dspPairPool.get(randomIndex);
                 }
 
-                String outputSTMFileName = getFileNameFromSong(selectedGame, songName);
+                String outputSTMFileName = getFileNameFromSong(originalSelectedGame, songName);
 
                 if (outputSTMFileName == null) {
                     return;
@@ -1307,10 +1419,11 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                     return;
                 }
 
+                String originalSelectedGame = selectedGame;
                 selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
 
                 String selectedSong = generateJob.getSongFileName();
-                String outputSTMFileName = getFileNameFromSong(selectedGame, selectedSong);
+                String outputSTMFileName = getFileNameFromSong(originalSelectedGame, selectedSong);
 
                 if (outputSTMFileName == null) {
                     return;
