@@ -27,8 +27,17 @@ public class STMGenerator {
             }
         }
 
-        if (outputSTMFile.exists()) {
-            outputSTMFile.delete();
+        boolean isSongNonLooping = false;
+
+        try {
+            if (outputSTMFile.exists()) {
+                isSongNonLooping = isSongNonLooping(outputSTMFile);
+                outputSTMFile.delete();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
+            return false;
         }
 
         try (RandomAccessFile stmRaf = new RandomAccessFile(outputSTMFile, "rw")) {
@@ -61,6 +70,10 @@ public class STMGenerator {
             //write last 0x8000 bytes of padding all STM files have
             writePaddingBytes(stmRaf, 0x8000);
 
+            if (isSongNonLooping) {
+                fixNonLoopingSTMHeader(stmRaf);
+            }
+
             logSongReplacement(songFileName, leftChannel, rightChannel, outputSTMFile, selectedGame);
 
             if (deleteDSPAfterGenerate) {
@@ -78,6 +91,40 @@ public class STMGenerator {
             JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
             return false;
         }
+    }
+
+    private static boolean isSongNonLooping(File stmFile) throws IOException {
+        int nonLoopingValue;
+
+        try (RandomAccessFile stmRaf = new RandomAccessFile(stmFile, "r")) {
+            stmRaf.seek(0x0C);
+            nonLoopingValue = stmRaf.readInt();
+        }
+
+        return nonLoopingValue == 0xFFFFFFFF;
+    }
+
+    private static void fixNonLoopingSTMHeader(RandomAccessFile stmRaf) throws IOException {
+        stmRaf.seek(0x0C);
+
+        stmRaf.write(0xFF);
+        stmRaf.write(0xFF);
+        stmRaf.write(0xFF);
+        stmRaf.write(0xFF);
+
+        stmRaf.seek(0x18);
+
+        stmRaf.write(0x00);
+        stmRaf.write(0x00);
+        stmRaf.write(0x00);
+        stmRaf.write(0x00);
+
+        stmRaf.seek(0x1C);
+
+        stmRaf.write(0x00);
+        stmRaf.write(0x00);
+        stmRaf.write(0x00);
+        stmRaf.write(0x00);
     }
 
     private static void writeAudioChannel(File audioChannel, RandomAccessFile stmRaf) throws IOException {
