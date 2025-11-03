@@ -1,4 +1,4 @@
-package uihelpers;
+package helpers;
 
 import java.io.File;
 

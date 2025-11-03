@@ -1,7 +1,7 @@
 package io;
 
 import constants.DSPFileConstants;
-import uihelpers.SongFileNameHelper;
+import helpers.SongFileNameHelper;
 
 import javax.swing.*;
 import java.io.*;

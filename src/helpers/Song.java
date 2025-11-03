@@ -1,4 +1,4 @@
-package uihelpers;
+package helpers;
 
 public class Song {
     private String songFileName;

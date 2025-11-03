@@ -1,6 +1,6 @@
 package constants;
 
-import uihelpers.Song;
+import helpers.Song;
 
 public class STMFileNames {
 

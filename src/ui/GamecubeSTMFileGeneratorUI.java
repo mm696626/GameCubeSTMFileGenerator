@@ -1,12 +1,12 @@
 package ui;
 
 import constants.STMFileNames;
+import helpers.DSPPair;
+import helpers.GenerateJob;
+import helpers.Song;
+import helpers.SongFileNameHelper;
 import io.STMGenerator;
 import io.STMHeaderLoopChecker;
-import uihelpers.DSPPair;
-import uihelpers.GenerateJob;
-import uihelpers.Song;
-import uihelpers.SongFileNameHelper;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
