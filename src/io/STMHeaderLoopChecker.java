@@ -1,6 +1,7 @@
 package io;
 
 import constants.DSPFileConstants;
+import constants.STMFileNames;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,5 +42,15 @@ public class STMHeaderLoopChecker {
         }
 
         return nonLoopingValue == 0xFFFFFFFF;
+    }
+
+    public static boolean isSongNonLoopingNonExisting(String fileName) {
+        for (int i=0; i<STMFileNames.NONLOOPING_FILE_NAMES.length; i++) {
+            if (fileName.equals(STMFileNames.NONLOOPING_FILE_NAMES[i])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -1,6 +1,7 @@
 package io;
 
 import constants.DSPFileConstants;
+import uihelpers.SongFileNameHelper;
 
 import javax.swing.*;
 import java.io.*;
@@ -12,19 +13,19 @@ import java.util.TreeMap;
 
 public class STMGenerator {
 
-    public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile, String songFileName, String selectedGame, boolean deleteDSPAfterGenerate) {
+    public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile, String songName, String selectedGame, boolean deleteDSPAfterGenerate) {
 
         boolean isMono = rightChannel == null;
 
         if (!isMono) {
             if (!STMHeaderLoopChecker.isValidLoopStart(leftChannel) || !STMHeaderLoopChecker.isValidLoopStart(rightChannel)) {
-                JOptionPane.showMessageDialog(null, "One or both of your channels for " + songFileName + " has an invalid loop start for the STM format!");
+                JOptionPane.showMessageDialog(null, "One or both of your channels for " + songName + " has an invalid loop start for the STM format!");
                 return false;
             }
         }
         else {
             if (!STMHeaderLoopChecker.isValidLoopStart(leftChannel)) {
-                JOptionPane.showMessageDialog(null, "Your mono DSP channel for " + songFileName + " has an invalid loop start for the STM format!");
+                JOptionPane.showMessageDialog(null, "Your mono DSP channel for " + songName + " has an invalid loop start for the STM format!");
                 return false;
             }
         }
@@ -41,6 +42,17 @@ public class STMGenerator {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
             return false;
+        }
+
+        if (!outputSTMFile.exists()) {
+            String songFileName = SongFileNameHelper.getFileNameFromSong(selectedGame, songName);
+
+            if (songFileName != null) {
+                isSongNonLooping = STMHeaderLoopChecker.isSongNonLoopingNonExisting(songFileName);
+            }
+            else {
+                return false;
+            }
         }
 
         try (RandomAccessFile stmRaf = new RandomAccessFile(outputSTMFile, "rw")) {
@@ -77,7 +89,7 @@ public class STMGenerator {
                 fixNonLoopingSTMHeader(stmRaf);
             }
 
-            logSongReplacement(songFileName, leftChannel, rightChannel, outputSTMFile, selectedGame);
+            logSongReplacement(songName, leftChannel, rightChannel, outputSTMFile, selectedGame);
 
             if (deleteDSPAfterGenerate) {
                 leftChannel.delete();
