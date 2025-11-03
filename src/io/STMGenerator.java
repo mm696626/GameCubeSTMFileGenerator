@@ -33,7 +33,7 @@ public class STMGenerator {
 
         try {
             if (outputSTMFile.exists()) {
-                isSongNonLooping = isSongNonLooping(outputSTMFile);
+                isSongNonLooping = STMHeaderLoopChecker.isSongNonLooping(outputSTMFile);
                 backupOriginalSTMFile(outputSTMFile, selectedGame);
                 outputSTMFile.delete();
             }
@@ -112,17 +112,6 @@ public class STMGenerator {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private static boolean isSongNonLooping(File stmFile) throws IOException {
-        int nonLoopingValue;
-
-        try (RandomAccessFile stmRaf = new RandomAccessFile(stmFile, "r")) {
-            stmRaf.seek(0x0C);
-            nonLoopingValue = stmRaf.readInt();
-        }
-
-        return nonLoopingValue == 0xFFFFFFFF;
     }
 
     private static void fixNonLoopingSTMHeader(RandomAccessFile stmRaf) throws IOException {

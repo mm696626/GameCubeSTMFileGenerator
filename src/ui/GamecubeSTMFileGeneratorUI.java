@@ -2,6 +2,7 @@ package ui;
 
 import constants.STMFileNames;
 import io.STMGenerator;
+import io.STMHeaderLoopChecker;
 import uihelpers.DSPPair;
 import uihelpers.GenerateJob;
 import uihelpers.Song;
@@ -1010,8 +1011,11 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
             JButton selectAllButton = new JButton("Select All");
             JButton selectNoneButton = new JButton("Select None");
+            JCheckBox onlyRandomizeLoopingSongsCheckbox = new JCheckBox("Randomize Looping Songs Only");
+
             buttonPanel.add(selectAllButton);
             buttonPanel.add(selectNoneButton);
+            buttonPanel.add(onlyRandomizeLoopingSongsCheckbox);
             topPanel.add(buttonPanel, BorderLayout.SOUTH);
 
             JPanel checkboxPanel = new JPanel();
@@ -1158,6 +1162,16 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 }
 
                 File outputSTMFile = new File(outputDir, outputSTMFileName);
+
+                try {
+                    if (onlyRandomizeLoopingSongsCheckbox.isSelected() && outputSTMFile.exists() && STMHeaderLoopChecker.isSongNonLooping(outputSTMFile)) {
+                        continue;
+                    }
+                }
+                catch (Exception ex) {
+                    return;
+                }
+
 
                 STMGenerator.generateSTM(chosenSongPair.getLeft(), chosenSongPair.getRight(), outputSTMFile, songName, selectedGame, deleteDSPAfterGenerate.isSelected());
             }
