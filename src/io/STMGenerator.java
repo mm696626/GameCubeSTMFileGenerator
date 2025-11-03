@@ -4,6 +4,8 @@ import constants.DSPFileConstants;
 
 import javax.swing.*;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
@@ -32,6 +34,7 @@ public class STMGenerator {
         try {
             if (outputSTMFile.exists()) {
                 isSongNonLooping = isSongNonLooping(outputSTMFile);
+                backupOriginalSTMFile(outputSTMFile, selectedGame);
                 outputSTMFile.delete();
             }
         } catch (Exception e) {
@@ -90,6 +93,24 @@ public class STMGenerator {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
             return false;
+        }
+    }
+
+    public static void backupOriginalSTMFile(File stmFile, String selectedGame) {
+        File backupSTMDir = new File("backup_stm_files", selectedGame);
+        if (!backupSTMDir.exists()) {
+            boolean backupDirCreated = backupSTMDir.mkdirs();
+            if (!backupDirCreated) {
+                return;
+            }
+        }
+
+        File backupSTMFile = new File(backupSTMDir, stmFile.getName());
+
+        try {
+            Files.copy(stmFile.toPath(), backupSTMFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
