@@ -104,6 +104,10 @@ public class STMGenerator {
 
         File backupSTMFile = new File(backupSTMDir, stmFile.getName());
 
+        if (backupSTMFile.exists()) {
+            return;
+        }
+
         try {
             Files.copy(stmFile.toPath(), backupSTMFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
