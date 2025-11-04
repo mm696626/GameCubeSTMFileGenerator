@@ -15,19 +15,9 @@ public class STMGenerator {
 
     public static boolean generateSTM(File leftChannel, File rightChannel, File outputSTMFile, String songName, String selectedGame, boolean deleteDSPAfterGenerate) {
 
-        boolean isMono = rightChannel == null;
-
-        if (!isMono) {
-            if (!STMHeaderLoopChecker.isValidLoopStart(leftChannel) || !STMHeaderLoopChecker.isValidLoopStart(rightChannel)) {
-                JOptionPane.showMessageDialog(null, "One or both of your channels for " + songName + " has an invalid loop start for the STM format!");
-                return false;
-            }
-        }
-        else {
-            if (!STMHeaderLoopChecker.isValidLoopStart(leftChannel)) {
-                JOptionPane.showMessageDialog(null, "Your mono DSP channel for " + songName + " has an invalid loop start for the STM format!");
-                return false;
-            }
+        if (!STMHeaderLoopChecker.isValidLoopStart(leftChannel) || !STMHeaderLoopChecker.isValidLoopStart(rightChannel)) {
+            JOptionPane.showMessageDialog(null, "One or both of your channels for " + songName + " has an invalid loop start for the STM format!");
+            return false;
         }
 
         boolean isSongNonLooping = false;
@@ -61,7 +51,7 @@ public class STMGenerator {
             int audioChannelLength = (int)leftChannel.length() - DSPFileConstants.DSP_HEADER_LENGTH_IN_BYTES;
             int audioChannelWithPaddingLength = getAudioChannelWithPaddingLength(audioChannelLength);
 
-            writeSTMHeader(leftChannel, stmRaf, audioChannelWithPaddingLength, isMono);
+            writeSTMHeader(leftChannel, stmRaf, audioChannelWithPaddingLength);
 
             writeDSPHeaders(leftChannel, rightChannel, stmRaf);
 
@@ -74,13 +64,11 @@ public class STMGenerator {
             //write 0x20 bytes of padding between channels
             writePaddingBytes(stmRaf, 0x20);
 
-            if (!isMono) {
-                //read and write right channel audio data
-                writeAudioChannel(rightChannel, stmRaf);
+            //read and write right channel audio data
+            writeAudioChannel(rightChannel, stmRaf);
 
-                //align right channel audio to 0x20 boundary
-                alignAudioData(audioChannelLength, stmRaf);
-            }
+            //align right channel audio to 0x20 boundary
+            alignAudioData(audioChannelLength, stmRaf);
 
             //write last 0x8000 bytes of padding all STM files have
             writePaddingBytes(stmRaf, 0x8000);
@@ -93,10 +81,7 @@ public class STMGenerator {
 
             if (deleteDSPAfterGenerate) {
                 leftChannel.delete();
-
-                if (!isMono) {
-                    rightChannel.delete();
-                }
+                rightChannel.delete();
             }
 
             return true;
@@ -172,18 +157,13 @@ public class STMGenerator {
 
         stmRaf.write(leftChannelHeader);
 
-        if (rightChannel != null) {
-            byte[] rightChannelHeader = new byte[DSPFileConstants.DSP_HEADER_LENGTH_IN_BYTES];
-            try (RandomAccessFile rightChannelRaf = new RandomAccessFile(rightChannel, "r")) {
-                rightChannelRaf.seek(0x00);
-                rightChannelRaf.read(rightChannelHeader);
-            }
+        byte[] rightChannelHeader = new byte[DSPFileConstants.DSP_HEADER_LENGTH_IN_BYTES];
+        try (RandomAccessFile rightChannelRaf = new RandomAccessFile(rightChannel, "r")) {
+            rightChannelRaf.seek(0x00);
+            rightChannelRaf.read(rightChannelHeader);
+        }
 
-            stmRaf.write(rightChannelHeader);
-        }
-        else {
-            writePaddingBytes(stmRaf, DSPFileConstants.DSP_HEADER_LENGTH_IN_BYTES);
-        }
+        stmRaf.write(rightChannelHeader);
     }
 
     private static int getAudioChannelWithPaddingLength(int audioChannelLength) {
@@ -198,7 +178,7 @@ public class STMGenerator {
         return audioChannelWithPaddingLength;
     }
 
-    private static void writeSTMHeader(File leftChannel, RandomAccessFile stmRaf, int audioChannelWithPaddingLength, boolean isMono) throws IOException {
+    private static void writeSTMHeader(File leftChannel, RandomAccessFile stmRaf, int audioChannelWithPaddingLength) throws IOException {
         //version number (always 512)
         stmRaf.write(0x02);
         stmRaf.write(0x00);
@@ -213,15 +193,8 @@ public class STMGenerator {
         //write sample rate
         stmRaf.write(stmSampleRate);
 
-        if (!isMono) {
-            //will mostly be stereo, so write 2
-            stmRaf.writeInt(2);
-        }
-        else {
-            //if it's mono, then write 1
-            stmRaf.writeInt(1);
-        }
-
+        //will be stereo, so write 2
+        stmRaf.writeInt(2);
 
         //grab loop start from DSP
         byte[] newLoopStart = new byte[DSPFileConstants.LOOP_START_LENGTH_IN_BYTES];
@@ -296,12 +269,7 @@ public class STMGenerator {
             }
         }
 
-        if (rightChannel != null) {
-            songMap.put(songFileName, leftChannel.getName() + "|" + rightChannel.getName());
-        }
-        else {
-            songMap.put(songFileName, leftChannel.getName() + "|" + "N/A");
-        }
+        songMap.put(songFileName, leftChannel.getName() + "|" + rightChannel.getName());
 
         try (PrintWriter outputStream = new PrintWriter(new FileOutputStream(logFile))) {
             for (Map.Entry<String, String> entry : songMap.entrySet()) {

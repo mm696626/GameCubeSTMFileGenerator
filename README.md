@@ -15,23 +15,6 @@
 * To ensure your STM will work in game, open it with vgmstream and see if it loads (if it doesn't, try it in game to see since I've had cases where it didn't load there, but worked perfectly in game. If that doesn't work, then try again)
   * https://katiefrogs.github.io/vgmstream-web/
 
-### Mono STM Files
-* Cubivore: Survival of the Fittest has none
-* Fire Emblem: Path of Radiance
-  * gcfe_bgm_evt_mist2_32k.stm
-* Paper Mario: The Thousand-Year Door
-  * evt_dot1_32k.stm
-  * ff_disc_set1_32k.stm
-  * ff_mail_chakusin1_32k.stm
-  * ff_mail_chakusin2_32k.stm
-  * ff_mail_chakusin3_32k.stm
-  * stg_rsh_a1_32k.stm
-  * stg_rsh_b1_32k.stm
-* There is support to write such files if the game crashes if they're stereo 
-  * The game doesn't crash, but it's neat anyway
-  * Of course, stereo STMs are the most common format, but it's an option with the Generate Mono STM button
-    * Everything other generation option uses stereo
-
 ### STM Format Documentation
 * STM Header
   * 0x02 bytes - Version Number? (always 512)

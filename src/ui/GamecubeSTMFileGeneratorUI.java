@@ -43,7 +43,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
     private JList<GenerateJob> jobQueueList;
     private JButton addToQueueButton, removeQueueButton, clearQueueButton, runBatchButton;
     private JButton modifyWithRandomSongs;
-    private JButton generateMonoSTM;
 
     private JCheckBox autoAddToQueue;
     private JCheckBox deleteDSPAfterGenerate;
@@ -161,9 +160,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         modifyWithRandomSongs = new JButton("Modify Songs with Random Songs");
         modifyWithRandomSongs.addActionListener(this);
 
-        generateMonoSTM = new JButton("Generate Mono STM");
-        generateMonoSTM.addActionListener(this);
-
         stmGBC.gridx = 0; stmGBC.gridy = 0;
         stmPanel.add(pickLeftChannel, stmGBC);
         stmGBC.gridx = 1;
@@ -177,8 +173,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
         stmGBC.gridx = 0; stmGBC.gridy = 2;
         stmPanel.add(generateSTM, stmGBC);
         stmGBC.gridx = 1;
-        stmPanel.add(generateMonoSTM, stmGBC);
-        stmGBC.gridx = 2;
         stmPanel.add(modifyWithRandomSongs, stmGBC);
 
         autoAddToQueue = new JCheckBox("Automatically Add DSP Pairs from DSP Folder to Queue");
@@ -861,68 +855,6 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             File outputSTMFile = new File(outputDir, outputSTMFileName);
 
             boolean generatedSuccessfully = STMGenerator.generateSTM(leftChannelFile, rightChannelFile, outputSTMFile, selectedSong, selectedGame, deleteDSPAfterGenerate.isSelected());
-
-            if (generatedSuccessfully) {
-                JOptionPane.showMessageDialog(null, "STM file generated successfully!");
-            }
-        }
-
-        if (e.getSource() == generateMonoSTM) {
-            JFileChooser dspFileChooser = new JFileChooser();
-            dspFileChooser.setDialogTitle("Select DSP File");
-            dspFileChooser.setAcceptAllFileFilterUsed(false);
-            FileNameExtensionFilter dspFilter = new FileNameExtensionFilter("DSP Files", "dsp");
-            dspFileChooser.setFileFilter(dspFilter);
-
-            int userSelection = dspFileChooser.showOpenDialog(this);
-            if (userSelection != JFileChooser.APPROVE_OPTION) return;
-
-            File selectedDSPFile = dspFileChooser.getSelectedFile();
-
-
-            String selectedSong = (String) songSelector.getSelectedItem();
-            if (selectedSong == null || selectedSong.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please select a song name before generating.");
-                return;
-            }
-
-            String selectedGame = (String) gameSelector.getSelectedItem();
-            if (selectedGame == null || selectedGame.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please select a game before generating.");
-                return;
-            }
-
-            String originalSelectedGame = selectedGame;
-            selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
-
-            File outputDir;
-
-            if (savedOutputFolder != null && savedOutputFolder.exists()) {
-                outputDir = savedOutputFolder;
-            }
-            else {
-                JFileChooser folderChooser = new JFileChooser();
-                folderChooser.setDialogTitle("Select Output Folder");
-                folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                folderChooser.setAcceptAllFileFilterUsed(false);
-
-                userSelection = folderChooser.showOpenDialog(this);
-                if (userSelection != JFileChooser.APPROVE_OPTION) {
-                    return;
-                }
-
-                outputDir = folderChooser.getSelectedFile();
-            }
-
-            String outputSTMFileName = SongFileNameHelper.getFileNameFromSong(originalSelectedGame, selectedSong);
-
-            if (outputSTMFileName == null) {
-                return;
-            }
-
-            File outputSTMFile = new File(outputDir, outputSTMFileName);
-
-            boolean generatedSuccessfully = STMGenerator.generateSTM(selectedDSPFile, null, outputSTMFile, selectedSong, selectedGame, deleteDSPAfterGenerate.isSelected());
 
             if (generatedSuccessfully) {
                 JOptionPane.showMessageDialog(null, "STM file generated successfully!");
