@@ -3,18 +3,18 @@ package helpers;
 import java.io.File;
 
 public class GenerateJob {
-    private String songFileName;
+    private String songName;
     private String leftDSP;
     private String rightDSP;
 
-    public GenerateJob(String songFileName, String leftDSP, String rightDSP) {
-        this.songFileName = songFileName;
+    public GenerateJob(String songName, String leftDSP, String rightDSP) {
+        this.songName = songName;
         this.leftDSP = leftDSP;
         this.rightDSP = rightDSP;
     }
 
-    public String getSongFileName() {
-        return songFileName;
+    public String getSongName() {
+        return songName;
     }
 
     public String getLeftDSP() {
@@ -27,6 +27,6 @@ public class GenerateJob {
 
     @Override
     public String toString() {
-        return songFileName + " [" + new File(leftDSP).getName() + ", " + new File(rightDSP).getName() + "]";
+        return songName + " [" + new File(leftDSP).getName() + ", " + new File(rightDSP).getName() + "]";
     }
 }

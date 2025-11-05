@@ -784,6 +784,14 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             return;
         }
 
+        for (int i = 0; i < jobQueueModel.getSize(); i++) {
+            GenerateJob job = jobQueueModel.getElementAt(i);
+            if (job.getSongName().equals(songFileName)) {
+                JOptionPane.showMessageDialog(this, "You already have a job in the queue for this song!");
+                return;
+            }
+        }
+
         jobQueueModel.addElement(new GenerateJob(songFileName, leftChannelPath, rightChannelPath));
     }
 
@@ -1123,7 +1131,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 File rightDSP = new File(generateJob.getRightDSP());
 
                 if (!leftDSP.exists() || !rightDSP.exists()) {
-                    JOptionPane.showMessageDialog(this, "DSP files for " + generateJob.getSongFileName() + " not found. Skipping.");
+                    JOptionPane.showMessageDialog(this, "DSP files for " + generateJob.getSongName() + " not found. Skipping.");
                     continue;
                 }
 
@@ -1138,7 +1146,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 String originalSelectedGame = selectedGame;
                 selectedGame = selectedGame.replaceAll("[^a-zA-Z0-9]", "_");
 
-                String selectedSong = generateJob.getSongFileName();
+                String selectedSong = generateJob.getSongName();
                 String outputSTMFileName = SongFileNameHelper.getFileNameFromSong(originalSelectedGame, selectedSong);
 
                 if (outputSTMFileName == null) {
@@ -1150,7 +1158,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
                 boolean generatedSuccessfully = STMGenerator.generateSTM(leftDSP, rightDSP, outputSTMFile, selectedSong, selectedGame, deleteDSPAfterGenerate.isSelected());
 
                 if (!generatedSuccessfully) {
-                    JOptionPane.showMessageDialog(null, "Something went wrong with the job for " + generateJob.getSongFileName());
+                    JOptionPane.showMessageDialog(null, "Something went wrong with the job for " + generateJob.getSongName());
                 }
             }
 
