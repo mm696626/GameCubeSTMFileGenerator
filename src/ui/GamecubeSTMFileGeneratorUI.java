@@ -461,6 +461,7 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             songSelector.setModel(new DefaultComboBoxModel<>(new String[]{}));
         }
 
+        jobQueueModel.clear();
         songSelector.revalidate();
         songSelector.repaint();
     }
