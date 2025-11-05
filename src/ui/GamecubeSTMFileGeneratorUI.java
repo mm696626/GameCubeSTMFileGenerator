@@ -477,6 +477,8 @@ public class GamecubeSTMFileGeneratorUI extends JFrame implements ActionListener
             initialSongArray[i] = STMFileNames.CUBIVORE_FILE_NAMES[i].getSongDisplayName();
         }
 
+        Arrays.sort(initialSongArray);
+
         return initialSongArray;
     }
 
