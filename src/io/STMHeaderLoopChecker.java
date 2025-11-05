@@ -4,7 +4,6 @@ import constants.DSPFileConstants;
 import constants.STMFileNames;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class STMHeaderLoopChecker {
@@ -33,12 +32,15 @@ public class STMHeaderLoopChecker {
         return false;
     }
 
-    public static boolean isSongNonLooping(File stmFile) throws IOException {
+    public static boolean isSongNonLooping(File stmFile) {
         int nonLoopingValue;
 
         try (RandomAccessFile stmRaf = new RandomAccessFile(stmFile, "r")) {
             stmRaf.seek(0x0C);
             nonLoopingValue = stmRaf.readInt();
+        }
+        catch (Exception e) {
+            return false;
         }
 
         return nonLoopingValue == 0xFFFFFFFF;

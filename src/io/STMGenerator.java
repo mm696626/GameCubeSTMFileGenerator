@@ -20,30 +20,8 @@ public class STMGenerator {
             return false;
         }
 
-        boolean isSongNonLooping = false;
-
-        try {
-            if (outputSTMFile.exists()) {
-                isSongNonLooping = STMHeaderLoopChecker.isSongNonLooping(outputSTMFile);
-                backupOriginalSTMFile(outputSTMFile, selectedGame);
-                outputSTMFile.delete();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
-            return false;
-        }
-
-        if (!outputSTMFile.exists()) {
-            String songFileName = SongFileNameHelper.getFileNameFromSong(selectedGame, songName);
-
-            if (songFileName != null) {
-                isSongNonLooping = STMHeaderLoopChecker.isSongNonLoopingNonExisting(songFileName);
-            }
-            else {
-                return false;
-            }
-        }
+        Boolean isSongNonLooping = getIsSongNonLooping(outputSTMFile, songName, selectedGame);
+        if (isSongNonLooping == null) return false;
 
         try (RandomAccessFile stmRaf = new RandomAccessFile(outputSTMFile, "rw")) {
 
@@ -91,6 +69,27 @@ public class STMGenerator {
             JOptionPane.showMessageDialog(null, "An error occurred: " + e.getMessage());
             return false;
         }
+    }
+
+    private static Boolean getIsSongNonLooping(File outputSTMFile, String songName, String selectedGame) {
+        boolean isSongNonLooping;
+
+        if (outputSTMFile.exists()) {
+            isSongNonLooping = STMHeaderLoopChecker.isSongNonLooping(outputSTMFile);
+            backupOriginalSTMFile(outputSTMFile, selectedGame);
+            outputSTMFile.delete();
+        }
+        else {
+            String songFileName = SongFileNameHelper.getFileNameFromSong(selectedGame, songName);
+
+            if (songFileName != null) {
+                isSongNonLooping = STMHeaderLoopChecker.isSongNonLoopingNonExisting(songFileName);
+            }
+            else {
+                return null;
+            }
+        }
+        return isSongNonLooping;
     }
 
     public static void backupOriginalSTMFile(File stmFile, String selectedGame) {
